@@ -1,0 +1,9 @@
+# Read about fixtures at https://api.rubyonrails.org/classes/ActiveRecord/FixtureSet.html
+
+pending_task:
+  title: Wire up the Expo client
+  completed: false
+
+completed_task:
+  title: Install Expo
+  completed: true

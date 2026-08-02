@@ -43,6 +43,12 @@ Rails.application.configure do
   # Print deprecation notices to the Rails logger.
   config.active_support.deprecation = :log
 
+  # Let the Expo app reach this server from a phone or emulator on the LAN.
+  # Rails already allows bare IPs in development, but mDNS names like
+  # "my-laptop.local" are rejected by Host Authorization with a 403. Add extra
+  # hostnames as a comma separated RAILS_DEVELOPMENT_HOSTS env var.
+  config.hosts << /.*\.local(:\d+)?\z/
+
   # Raise an error on page load if there are pending migrations.
   config.active_record.migration_error = :page_load
 
