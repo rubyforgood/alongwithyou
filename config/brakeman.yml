@@ -1,0 +1,7 @@
+---
+# Brakeman scans every .rb file under the app root. The Expo project in mobile/
+# vendors React Native, whose node_modules contain CocoaPods build scripts
+# written in Ruby. Those are third-party build tooling, not part of this Rails
+# app, and they generate a wall of false positives.
+:skip_files:
+  - mobile/

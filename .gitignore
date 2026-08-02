@@ -33,3 +33,7 @@
 # Ignore key files for decrypting credentials and more.
 /config/*.key
 
+# Ignore the alternate data stream files Windows attaches to downloaded files,
+# which surface as real files when the repo lives on a WSL mount.
+*:Zone.Identifier
+
