@@ -18,10 +18,13 @@ export default function TasksScreen() {
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
+  // Nothing here may touch state before the first await: this runs straight
+  // from an effect, and a synchronous setState there cascades an extra render.
   const load = useCallback(async () => {
-    setError(null);
     try {
-      setItems(await tasks.list());
+      const loaded = await tasks.list();
+      setItems(loaded);
+      setError(null);
     } catch (cause) {
       setError(cause instanceof ApiError ? cause.message : 'Something went wrong.');
     } finally {
@@ -30,6 +33,9 @@ export default function TasksScreen() {
   }, []);
 
   useEffect(() => {
+    // Fetching on mount. The rule wants this handed to Suspense or a data
+    // library instead; until this app has one, an effect is the honest option.
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     load();
   }, [load]);
 

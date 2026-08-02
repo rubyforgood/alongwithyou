@@ -1,56 +1,78 @@
-# Welcome to your Expo app 👋
+# Along With You mobile app
 
-This is an [Expo](https://expo.dev) project created with [`create-expo-app`](https://www.npmjs.com/package/create-expo-app).
+The React Native client, built with Expo SDK 57, TypeScript and Expo Router.
+The Rails application in the repository root is the backend.
 
-## Get started
+## Prerequisites
 
-1. Install dependencies
+- Node.js 20.19.4 or newer (React Native 0.86 will not build on older versions)
+- npm
+- [Expo Go](https://expo.dev/go) on an Android or iOS device, or a simulator
 
-   ```bash
-   npm install
-   ```
-
-2. Start the app
-
-   ```bash
-   npx expo start
-   ```
-
-In the output, you'll find options to open the app in a
-
-- [development build](https://docs.expo.dev/develop/development-builds/introduction/)
-- [Android emulator](https://docs.expo.dev/workflow/android-studio-emulator/)
-- [iOS simulator](https://docs.expo.dev/workflow/ios-simulator/)
-- [Expo Go](https://expo.dev/go), a limited sandbox for trying out app development with Expo
-
-You can start developing by editing the files inside the **app** directory. This project uses [file-based routing](https://docs.expo.dev/router/introduction).
-
-## Get a fresh project
-
-When you're ready, run:
+## Setup
 
 ```bash
-npm run reset-project
+cd mobile
+npm install
+npm start
 ```
 
-This command will move the starter code to the **app-example** directory and create a blank **app** directory where you can start developing.
+Start the Rails API too, or the app will load with a connection error:
 
-### Other setup steps
+```bash
+# from the repository root, in another terminal
+bin/rails server -b 0.0.0.0
+```
 
-- To set up ESLint for linting, run `npx expo lint`, or follow our guide on ["Using ESLint and Prettier"](https://docs.expo.dev/guides/using-eslint/)
-- If you'd like to set up unit testing, follow our guide on ["Unit Testing with Jest"](https://docs.expo.dev/develop/unit-testing/)
-- Learn more about the TypeScript setup in this template in our guide on ["Using TypeScript"](https://docs.expo.dev/guides/typescript/)
+Then press `i` for the iOS simulator, `a` for the Android emulator, `w` for the
+browser, or scan the QR code with Expo Go. Your computer and phone need to be on
+the same network; if local discovery fails, try a tunnel:
 
-## Learn more
+```bash
+npx expo start --tunnel
+```
 
-To learn more about developing your project with Expo, look at the following resources:
+Note that a tunnel only routes the JavaScript bundle, not your API. See the
+root README for the full story, including WSL2 port forwarding.
 
-- [Expo documentation](https://docs.expo.dev/): Learn fundamentals, or go into advanced topics with our [guides](https://docs.expo.dev/guides).
-- [Learn Expo tutorial](https://docs.expo.dev/tutorial/introduction/): Follow a step-by-step tutorial where you'll create a project that runs on Android, iOS, and the web.
+## Other commands
 
-## Join the community
+```bash
+npm run android
+npm run ios
+npm run web
+npm run lint
+npm run typecheck
+```
 
-Join our community of developers creating universal apps.
+The iOS simulator requires macOS and Xcode. Expo Go still runs the app on a
+physical iPhone without a Mac.
 
-- [Expo on GitHub](https://github.com/expo/expo): View our open source platform and contribute.
-- [Discord community](https://chat.expo.dev): Chat with Expo users and ask questions.
+## Project structure
+
+- `src/app/` — file-based screens and navigation
+- `src/components/` — reusable components
+- `src/hooks/`, `src/constants/` — theming and colour scheme
+- `src/lib/api.ts` — typed client for the Rails API
+- `assets/` — icons and splash screens
+- `app.json` — Expo configuration
+
+The `@/` import alias points at `src/`.
+
+## Talking to Rails
+
+`src/lib/api.ts` works out where the API lives by reusing the address Metro is
+already serving the bundle from, so `localhost` resolving differently on the
+iOS simulator, the Android emulator (`10.0.2.2`) and real devices is handled for
+you. Override it with `EXPO_PUBLIC_API_URL` in `.env` — see `.env.example`.
+Release builds have no Metro server to ask, so they require it.
+
+The **Tasks** tab is a working example of the round trip: it lists, creates,
+toggles and deletes records through `/api/v1/tasks`. `Task` is a placeholder
+resource, meant to be replaced with your real model.
+
+## Documentation
+
+- [Expo documentation](https://docs.expo.dev/versions/v57.0.0/)
+- [Expo Router](https://docs.expo.dev/router/introduction/)
+- [React Native documentation](https://reactnative.dev/docs/getting-started)
