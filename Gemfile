@@ -40,6 +40,11 @@ gem "thruster", require: false
 # Use Active Storage variants [https://guides.rubyonrails.org/active_storage_overview.html#transforming-images]
 gem "image_processing", "~> 1.2"
 
+# Loaded on demand by Active Storage's vips variant processor. Not required at
+# boot: that would make every process dlopen libvips.so, including CI jobs that
+# only boot Rails to read config (bin/importmap audit) and have no need for it.
+gem "ruby-vips", "~> 2.0", require: false
+
 group :development, :test do
   # See https://guides.rubyonrails.org/debugging_rails_applications.html#debugging-with-the-debug-gem
   gem "debug", platforms: %i[ mri windows ], require: "debug/prelude"
