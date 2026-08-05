@@ -1,9 +1,14 @@
 # Read about fixtures at https://api.rubyonrails.org/classes/ActiveRecord/FixtureSet.html
 
+# Timestamps are explicit because Task.newest_first orders by them. Fixtures
+# otherwise share a single created_at, which leaves the order up to SQLite and
+# any assertion about it meaningless.
 pending_task:
   title: Wire up the Expo client
   completed: false
+  created_at: <%= 1.hour.ago.to_fs(:db) %>
 
 completed_task:
   title: Install Expo
   completed: true
+  created_at: <%= 2.hours.ago.to_fs(:db) %>

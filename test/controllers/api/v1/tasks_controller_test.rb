@@ -13,7 +13,7 @@ module Api
         assert_response :success
         body = response.parsed_body
         assert_equal Task.count, body.size
-        assert_equal body.map { |task| task["created_at"] }.sort.reverse, body.map { |task| task["created_at"] }
+        assert_equal [ tasks(:pending_task).id, tasks(:completed_task).id ], body.map { |task| task["id"] }
       end
 
       test "show returns a single task" do
@@ -71,6 +71,16 @@ module Api
         assert_equal "bad_request", response.parsed_body["error"]
       end
 
+      test "create returns a json 400 for a body that is not json" do
+        assert_no_difference "Task.count" do
+          post api_v1_tasks_url, params: "{\"task\": {\"title\"", headers: { "CONTENT_TYPE" => "application/json" }
+        end
+
+        assert_response :bad_request
+        assert_equal "application/json", response.media_type
+        assert_equal "bad_request", response.parsed_body["error"]
+      end
+
       test "create ignores attributes that are not permitted" do
         post api_v1_tasks_url, params: { task: { title: "Ship it", id: 12345 } }, as: :json
 
@@ -98,6 +108,14 @@ module Api
         end
 
         assert_response :no_content
+      end
+
+      test "an unknown path under api answers in json, not html" do
+        get "/api/v1/nope", as: :json
+
+        assert_response :not_found
+        assert_equal "application/json", response.media_type
+        assert_equal "not_found", response.parsed_body["error"]
       end
     end
   end

@@ -4,8 +4,15 @@ Rails.application.routes.draw do
   # JSON API consumed by the Expo app in mobile/.
   namespace :api do
     namespace :v1 do
-      resources :tasks
+      # No new/edit: those serve HTML forms, which this API never renders. They
+      # would also shadow the JSON 404 below with a missing action error.
+      resources :tasks, except: %i[ new edit ]
     end
+
+    # Everything under /api answers in JSON, including a wrong path. Without
+    # this, an unknown route falls through to the HTML 404 page and the phone
+    # gets markup where it expected a body it can parse.
+    match "*unmatched", to: "base#unmatched_route", via: :all, format: false
   end
 
   # Reveal health status on /up that returns 200 if the app boots with no exceptions, otherwise 500.

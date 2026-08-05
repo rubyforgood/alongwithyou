@@ -9,6 +9,19 @@ module Api
   class BaseController < ActionController::API
     rescue_from ActiveRecord::RecordNotFound, with: :not_found
     rescue_from ActionController::ParameterMissing, with: :bad_request
+    # A phone on a flaky connection can truncate a request body. Without this,
+    # Rails answers unparseable JSON with an HTML error page, which the client
+    # cannot read.
+    rescue_from ActionDispatch::Http::Parameters::ParseError, with: :malformed_json
+
+    # Anything under /api that does not match a route: a typo, or a client built
+    # against a newer version of this API. Still answered in JSON.
+    def unmatched_route
+      render json: {
+        error: "not_found",
+        message: "No route matches #{request.request_method} #{request.path}"
+      }, status: :not_found
+    end
 
     private
       def not_found(error)
@@ -17,6 +30,10 @@ module Api
 
       def bad_request(error)
         render json: { error: "bad_request", message: error.message }, status: :bad_request
+      end
+
+      def malformed_json(_error)
+        render json: { error: "bad_request", message: "Request body is not valid JSON." }, status: :bad_request
       end
 
       # Shape validation failures so the client can show a banner *and* mark up
