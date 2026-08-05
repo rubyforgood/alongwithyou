@@ -385,6 +385,7 @@ PLATFORMS
   arm-linux-gnu
   arm-linux-musl
   arm64-darwin-23
+  arm64-darwin-25
   x86_64-linux
   x86_64-linux-gnu
   x86_64-linux-musl
@@ -403,6 +404,7 @@ DEPENDENCIES
   puma (>= 5.0)
   rails (~> 8.1.3)
   rubocop-rails-omakase
+  ruby-vips (~> 2.0)
   selenium-webdriver
   solid_cable
   solid_cache
