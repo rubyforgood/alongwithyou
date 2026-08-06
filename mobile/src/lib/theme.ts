@@ -1,72 +1,75 @@
 /**
- * The React Native Reusables palette as plain colour strings.
+ * The theme as plain colour strings.
  *
- * These are the same values as the CSS variables in src/global.css. Components
- * should reach for the Tailwind class names instead (`bg-card`,
- * `text-muted-foreground`); this file is for the handful of places that take a
- * colour rather than a class name - navigation, the status bar, and native
- * components with colour props.
+ * The same values as the CSS variables in src/global.css, which is where the
+ * reasoning behind them lives - including why the light and dark primaries are
+ * different shades of the brand teal. Change one, change both.
  *
- * Change a colour in src/global.css and change it here too, or the two drift.
- *
- * Not to be confused with src/constants/theme.ts, which holds the palette the
- * screens predating this library style themselves from.
+ * Components should prefer the Tailwind class names (`bg-primary`,
+ * `text-muted-foreground`). This file is for the places that take a colour
+ * rather than a class name: navigation, the status bar, native components with
+ * colour props, and src/constants/theme.ts.
  */
 
 import { DarkTheme, DefaultTheme, type Theme } from 'expo-router';
 
+/** rgb(35, 170, 172). The primary in dark mode, and --chart-1 in both. */
+export const BRAND_TEAL = 'hsl(181 66% 41%)';
+
 export const THEME = {
   light: {
-    background: 'hsl(0 0% 100%)',
-    foreground: 'hsl(0 0% 3.9%)',
+    background: 'hsl(180 30% 99%)',
+    foreground: 'hsl(196 28% 16%)',
     card: 'hsl(0 0% 100%)',
-    cardForeground: 'hsl(0 0% 3.9%)',
+    cardForeground: 'hsl(196 28% 16%)',
     popover: 'hsl(0 0% 100%)',
-    popoverForeground: 'hsl(0 0% 3.9%)',
-    primary: 'hsl(0 0% 9%)',
-    primaryForeground: 'hsl(0 0% 98%)',
-    secondary: 'hsl(0 0% 96.1%)',
-    secondaryForeground: 'hsl(0 0% 9%)',
-    muted: 'hsl(0 0% 96.1%)',
-    mutedForeground: 'hsl(0 0% 45.1%)',
-    accent: 'hsl(0 0% 96.1%)',
-    accentForeground: 'hsl(0 0% 9%)',
-    destructive: 'hsl(0 84.2% 60.2%)',
-    border: 'hsl(0 0% 89.8%)',
-    input: 'hsl(0 0% 89.8%)',
-    ring: 'hsl(0 0% 63%)',
-    radius: '0.625rem',
-    chart1: 'hsl(12 76% 61%)',
-    chart2: 'hsl(173 58% 39%)',
-    chart3: 'hsl(197 37% 24%)',
-    chart4: 'hsl(43 74% 66%)',
-    chart5: 'hsl(27 87% 67%)',
+    popoverForeground: 'hsl(196 28% 16%)',
+    primary: 'hsl(181 66% 29%)',
+    primaryForeground: 'hsl(0 0% 100%)',
+    secondary: 'hsl(180 30% 95%)',
+    secondaryForeground: 'hsl(194 30% 22%)',
+    muted: 'hsl(180 28% 96%)',
+    mutedForeground: 'hsl(196 14% 40%)',
+    accent: 'hsl(181 40% 92%)',
+    accentForeground: 'hsl(193 45% 22%)',
+    destructive: 'hsl(352 58% 45%)',
+    destructiveForeground: 'hsl(0 0% 100%)',
+    border: 'hsl(185 22% 88%)',
+    input: 'hsl(185 22% 85%)',
+    ring: 'hsl(181 66% 29%)',
+    radius: '0.875rem',
+    chart1: BRAND_TEAL,
+    chart2: 'hsl(196 55% 42%)',
+    chart3: 'hsl(168 45% 38%)',
+    chart4: 'hsl(210 45% 52%)',
+    chart5: 'hsl(30 52% 55%)',
   },
   dark: {
-    background: 'hsl(0 0% 3.9%)',
-    foreground: 'hsl(0 0% 98%)',
-    card: 'hsl(0 0% 3.9%)',
-    cardForeground: 'hsl(0 0% 98%)',
-    popover: 'hsl(0 0% 3.9%)',
-    popoverForeground: 'hsl(0 0% 98%)',
-    primary: 'hsl(0 0% 98%)',
-    primaryForeground: 'hsl(0 0% 9%)',
-    secondary: 'hsl(0 0% 14.9%)',
-    secondaryForeground: 'hsl(0 0% 98%)',
-    muted: 'hsl(0 0% 14.9%)',
-    mutedForeground: 'hsl(0 0% 63.9%)',
-    accent: 'hsl(0 0% 14.9%)',
-    accentForeground: 'hsl(0 0% 98%)',
-    destructive: 'hsl(0 70.9% 59.4%)',
-    border: 'hsl(0 0% 14.9%)',
-    input: 'hsl(0 0% 14.9%)',
-    ring: 'hsl(300 0% 45%)',
-    radius: '0.625rem',
-    chart1: 'hsl(220 70% 50%)',
-    chart2: 'hsl(160 60% 45%)',
-    chart3: 'hsl(30 80% 55%)',
-    chart4: 'hsl(280 65% 60%)',
-    chart5: 'hsl(340 75% 55%)',
+    background: 'hsl(196 30% 8%)',
+    foreground: 'hsl(180 18% 94%)',
+    card: 'hsl(196 26% 11%)',
+    cardForeground: 'hsl(180 18% 94%)',
+    popover: 'hsl(196 26% 11%)',
+    popoverForeground: 'hsl(180 18% 94%)',
+    primary: BRAND_TEAL,
+    primaryForeground: 'hsl(192 50% 8%)',
+    secondary: 'hsl(196 22% 17%)',
+    secondaryForeground: 'hsl(180 16% 92%)',
+    muted: 'hsl(196 22% 16%)',
+    mutedForeground: 'hsl(188 14% 68%)',
+    accent: 'hsl(194 26% 22%)',
+    accentForeground: 'hsl(180 16% 92%)',
+    destructive: 'hsl(352 55% 48%)',
+    destructiveForeground: 'hsl(0 0% 100%)',
+    border: 'hsl(196 20% 20%)',
+    input: 'hsl(196 20% 24%)',
+    ring: BRAND_TEAL,
+    radius: '0.875rem',
+    chart1: 'hsl(181 62% 55%)',
+    chart2: 'hsl(196 58% 58%)',
+    chart3: 'hsl(168 45% 52%)',
+    chart4: 'hsl(210 50% 64%)',
+    chart5: 'hsl(30 55% 62%)',
   },
 } as const;
 

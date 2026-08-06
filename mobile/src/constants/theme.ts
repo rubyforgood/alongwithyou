@@ -2,29 +2,36 @@
  * The palette and spacing scale the StyleSheet-based screens use, in light and
  * dark mode.
  *
- * New UI is better off with the Tailwind class names the components in
- * src/components/ui/ are built from - `bg-background`, `text-muted-foreground`
- * and the rest, which come from src/global.css and src/lib/theme.ts. This file
- * covers the screens written before that, plus `Fonts` and `Spacing`, which have
- * no equivalent there.
+ * `Colors` is derived from THEME rather than holding its own hex values, so the
+ * screens still on StyleSheet - and the native tab bar - pick up the theme
+ * instead of drifting from everything in src/components/ui/. There is one
+ * palette, in src/global.css.
+ *
+ * New UI is better off with the Tailwind class names directly: `bg-background`,
+ * `text-muted-foreground` and the rest. What is left here that has no Tailwind
+ * equivalent is `Fonts` and `Spacing`.
  */
 
 import { Platform } from 'react-native';
 
+import { THEME } from '@/lib/theme';
+
 export const Colors = {
   light: {
-    text: '#000000',
-    background: '#ffffff',
-    backgroundElement: '#F0F0F3',
-    backgroundSelected: '#E0E1E6',
-    textSecondary: '#60646C',
+    text: THEME.light.foreground,
+    background: THEME.light.background,
+    backgroundElement: THEME.light.muted,
+    backgroundSelected: THEME.light.accent,
+    textSecondary: THEME.light.mutedForeground,
+    link: THEME.light.primary,
   },
   dark: {
-    text: '#ffffff',
-    background: '#000000',
-    backgroundElement: '#212225',
-    backgroundSelected: '#2E3135',
-    textSecondary: '#B0B4BA',
+    text: THEME.dark.foreground,
+    background: THEME.dark.background,
+    backgroundElement: THEME.dark.muted,
+    backgroundSelected: THEME.dark.accent,
+    textSecondary: THEME.dark.mutedForeground,
+    link: THEME.dark.primary,
   },
 } as const;
 

@@ -97,25 +97,50 @@ Anything that renders over the page — dialogs, dropdown menus, popovers,
 tooltips — goes through the `PortalHost` in `src/app/_layout.tsx`, which is
 already mounted.
 
-Three things worth knowing:
+Four things worth knowing:
 
 - **`Text` comes from `@/components/ui/text`, not `react-native`.** These
   components hand their text styling down through React context, so a bare
   `<Text>` inside a `<Button>` renders unstyled.
-- **Colours are class names, not values.** `bg-background`,
+- **Colours are class names, not values.** `bg-primary`,
   `text-muted-foreground` and the rest read the CSS variables in
-  `src/global.css`, which is what makes them follow the colour scheme with no
-  conditionals. `THEME` in `src/lib/theme.ts` mirrors those variables for the
-  few native props that want a real colour string - keep the two in step, and
-  see [the customization
-  guide](https://reactnativereusables.com/docs/customization) before changing
-  either.
+  `src/global.css` - see the theme section below.
+- **Import icons one at a time.** `import Clock from
+  'lucide-react-native/icons/clock'`, never `import { Clock } from
+  'lucide-react-native'`. Metro does not tree-shake, so the barrel drags all
+  ~1500 icons in: about 1.8MB of bundle, on an app that is otherwise 3.8MB.
 - **`src/components/ui/collapsible.tsx` is not one of theirs.** It predates the
   library, and `add collapsible` would overwrite it.
 
 The screens written before this still style themselves through `ThemedText`,
-`ThemedView` and `src/constants/theme.ts`. Both approaches work; moving them
-over is a separate job.
+`ThemedView` and `src/constants/theme.ts`, but that palette is derived from the
+theme now, so they follow it. Rewriting them in Tailwind is a separate job.
+
+## The theme
+
+One palette, defined once as CSS variables in `src/global.css` and reached three
+ways:
+
+| | |
+|---|---|
+| `src/global.css` | the source of truth - Tailwind class names resolve to these |
+| `src/lib/theme.ts` | the same values as colour strings, for props that take a colour rather than a class. `NAV_THEME` shapes them for navigation |
+| `src/constants/theme.ts` | `Colors`, derived from the above, for the screens still on `StyleSheet` and for the native tab bar |
+
+Change a colour in `src/global.css` and it reaches the whole app - but update
+`src/lib/theme.ts` to match, or the two drift.
+
+The brand teal is **`rgb(35, 170, 172)`** — `hsl(181 66% 41%)`, `#23AAAC`. It is
+the primary in dark mode. In light mode the primary is the same hue and
+saturation at 29% lightness (`#19797B`), because the brand teal is too light to
+put white text on: 2.8:1, where WCAG AA wants 4.5:1. Deepening it buys 5.2:1 for
+a white label and 5.1:1 as ink on the background, so one teal does buttons,
+links, icons and focus rings instead of needing a shade for each.
+
+**Every colour pair clears WCAG AA in both schemes** — 4.5:1 for text, 3:1 for
+interface colour. That is not decoration here: this is a journal for people in
+cancer treatment, often read while exhausted, often on a phone in bad light. If
+you change a value, check the contrast before shipping it.
 
 ## Talking to Rails
 
@@ -138,12 +163,14 @@ npm run test:watch    # while working
 
 [jest-expo](https://docs.expo.dev/develop/unit-testing/) plus [React Native
 Testing Library](https://callstack.github.io/react-native-testing-library/).
-Three suites to copy from:
+Four suites to copy from:
 
 - `src/lib/api.test.ts` — the client against a mocked `fetch`: how the API URL
   is resolved per platform, and what every failure turns into.
 - `src/__tests__/tasks-screen.test.tsx` — the Tasks screen against a mocked
   `@/lib/api`: rendering, adding, toggling, and what a failed delete does.
+- `src/__tests__/landing-screen.test.tsx` — the landing screen: its heading,
+  its two ways in, and the line saying it is not medical advice.
 - `src/components/ui/reusables.test.tsx` — that the components in
   `src/components/ui/` still mount, which is the thing the NativeWind setup
   breaks first.
