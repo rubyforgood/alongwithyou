@@ -1,9 +1,13 @@
 /**
- * Below are the colors that are used in the app. The colors are defined in the light and dark mode.
- * There are many other ways to style your app. For example, [Nativewind](https://www.nativewind.dev/), [Tamagui](https://tamagui.dev/), [unistyles](https://reactnativeunistyles.vercel.app), etc.
+ * The palette and spacing scale the StyleSheet-based screens use, in light and
+ * dark mode.
+ *
+ * New UI is better off with the Tailwind class names the components in
+ * src/components/ui/ are built from - `bg-background`, `text-muted-foreground`
+ * and the rest, which come from src/global.css and src/lib/theme.ts. This file
+ * covers the screens written before that, plus `Fonts` and `Spacing`, which have
+ * no equivalent there.
  */
-
-import '@/global.css';
 
 import { Platform } from 'react-native';
 
