@@ -4,6 +4,9 @@ import { Platform } from 'react-native';
 /** Port that `bin/rails server` listens on. */
 const RAILS_PORT = 3000;
 
+/** How long to wait for the API before giving up on a request. */
+const REQUEST_TIMEOUT_MS = 10_000;
+
 /**
  * Where the Rails API lives.
  *
@@ -73,10 +76,21 @@ async function request<T>(path: string, init: RequestInit = {}): Promise<T> {
     );
   }
 
+  // A network that drops packets instead of refusing the connection - a phone
+  // that has wandered off the wifi, a laptop asleep behind a port forward -
+  // leaves fetch pending indefinitely, and the caller's spinner with it.
+  const controller = new AbortController();
+  let timedOut = false;
+  const timer = setTimeout(() => {
+    timedOut = true;
+    controller.abort();
+  }, REQUEST_TIMEOUT_MS);
+
   let response: Response;
   try {
     response = await fetch(`${API_BASE_URL}${path}`, {
       ...init,
+      signal: controller.signal,
       headers: {
         Accept: 'application/json',
         'Content-Type': 'application/json',
@@ -84,21 +98,49 @@ async function request<T>(path: string, init: RequestInit = {}): Promise<T> {
       },
     });
   } catch {
+    if (timedOut) {
+      throw new ApiError(
+        `The Rails server at ${API_BASE_URL} did not answer within ${REQUEST_TIMEOUT_MS / 1000}s.`,
+        0
+      );
+    }
+
     // fetch only rejects on transport failure, which here almost always means
     // Rails is not running or is not reachable from this device.
     throw new ApiError(`Could not reach the Rails server at ${API_BASE_URL}.`, 0);
+  } finally {
+    clearTimeout(timer);
   }
 
   if (response.status === 204) return undefined as T;
 
   const body = await response.text();
-  const payload = body ? JSON.parse(body) : null;
+
+  // Not everything that answers is Rails: proxies, captive portals and tunnels
+  // all serve HTML, and so does Rails itself for anything raised outside the
+  // API namespace. A parse failure has to reach the caller as an ApiError like
+  // every other failure, not as a bare SyntaxError from inside this function.
+  let payload: unknown = null;
+  if (body) {
+    try {
+      payload = JSON.parse(body);
+    } catch {
+      throw new ApiError(
+        `Expected JSON from ${path} but the server sent ${
+          response.headers.get('content-type') ?? 'an unknown content type'
+        }.`,
+        response.status
+      );
+    }
+  }
 
   if (!response.ok) {
+    const failure = (payload ?? {}) as { message?: string; errors?: FieldErrors };
+
     throw new ApiError(
-      payload?.message ?? `Request failed with status ${response.status}.`,
+      failure.message ?? `Request failed with status ${response.status}.`,
       response.status,
-      payload?.errors ?? {}
+      failure.errors ?? {}
     );
   }
 

@@ -71,13 +71,20 @@ export default function TasksScreen() {
   }
 
   async function removeTask(task: Task) {
-    const previous = items;
+    // Only the row's position is worth keeping from this render. Restoring the
+    // whole array would undo anything that changed while the request was in
+    // flight, so deleting two rows in a row could resurrect the first one.
+    const index = items.findIndex((item) => item.id === task.id);
     setItems((current) => current.filter((item) => item.id !== task.id));
 
     try {
       await tasks.destroy(task.id);
     } catch (cause) {
-      setItems(previous);
+      setItems((current) => {
+        const restored = [...current];
+        restored.splice(index < 0 ? current.length : Math.min(index, current.length), 0, task);
+        return restored;
+      });
       setError(cause instanceof ApiError ? cause.message : 'Something went wrong.');
     }
   }
