@@ -38,6 +38,9 @@ core.*
 # typescript
 *.tsbuildinfo
 
+# jest
+coverage/
+
 example
 
 # generated native folders
