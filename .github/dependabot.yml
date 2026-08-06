@@ -10,3 +10,16 @@ updates:
   schedule:
     interval: weekly
   open-pull-requests-limit: 10
+- package-ecosystem: npm
+  directory: "/mobile"
+  schedule:
+    interval: weekly
+  open-pull-requests-limit: 10
+  groups:
+    expo:
+      patterns:
+      - "expo"
+      - "expo-*"
+      - "@expo/*"
+      - "react-native*"
+      - "@types/react"

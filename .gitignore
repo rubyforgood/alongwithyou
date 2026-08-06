@@ -33,3 +33,12 @@
 # Ignore key files for decrypting credentials and more.
 /config/*.key
 
+# Ignore the alternate data stream files Windows attaches to downloaded files,
+# which surface as real files when the repo lives on a WSL mount.
+*:Zone.Identifier
+
+# Ignore core dumps. Tooling that crashes here drops one next to the process,
+# and they are large enough to be worth never committing by accident. Numbered
+# suffix only, so a file like core.rb is untouched.
+core.[0-9]*
+

@@ -36,6 +36,10 @@
 !/app/assets/builds/.keep
 /public/assets
 
+# Ignore the Expo app. It is shipped to the app stores by EAS, not baked into
+# the Rails image, and its node_modules would bloat the build context.
+/mobile/
+
 # Ignore CI service files.
 /.github
 
