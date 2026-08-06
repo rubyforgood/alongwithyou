@@ -136,10 +136,16 @@ only affects the web target; native builds are not subject to CORS.
 ## Tests
 
 ```sh
-bin/rails test                  # Rails
-bin/ci                          # everything CI runs: rubocop, brakeman, audits, tests
-cd mobile && npx tsc --noEmit   # TypeScript
+bin/rails test                     # Rails
+bin/ci                             # the Ruby half: rubocop, brakeman, audits, tests, seeds
+
+cd mobile
+npm run typecheck                  # TypeScript
+npm run lint                       # ESLint
 ```
+
+`bin/ci` covers Ruby only. GitHub Actions runs both halves: the `mobile` job
+lints, typechecks and audits the Expo app on every pull request.
 
 Rubocop, Brakeman and the Docker build context all skip `mobile/`, since its
 `node_modules` ships Ruby CocoaPods scripts that would otherwise be linted and
@@ -151,9 +157,22 @@ scanned as if they were ours.
   scheme (`has_secure_password` plus a bearer token, or `authenticate_by`) fits
   a phone client better than cookie sessions; store the token with
   `expo-secure-store`, not `AsyncStorage`.
+- **Rate limiting.** Also absent. Rails 8 ships `rate_limit` at the controller
+  level, which needs a cache store configured in whatever environment serves
+  this API.
 - **Native builds.** `npx expo start` runs inside Expo Go, which only includes
   Expo's own native modules. The moment you add a library with custom native
   code you need a development build (`npx expo run:ios` / `run:android`) and
   [EAS Build](https://docs.expo.dev/build/introduction/) for the app stores.
+  `mobile/app.json` still needs `ios.bundleIdentifier`, `android.package` and an
+  EAS project id before any of that works.
+- **The starter screens.** Home and Explore are still Expo's template: Expo
+  branding, Expo logo, links to Expo's docs. Tasks is the only screen that
+  belongs to this project. Replacing them also retires several dependencies
+  (`expo-symbols`, `expo-glass-effect`, `@expo/ui`, `expo-device`) and the
+  `react-logo`, `expo-badge`, `tutorial-web` and `logo-glow` assets.
+- **Licensing.** `mobile/LICENSE` is Expo's MIT license, copyright 650
+  Industries, inherited from the template. The repository root has no license
+  file at all. Decide what covers this project and say so in one place.
 - **Production database.** SQLite is the default here and is genuinely fine for
   a single server, but check `config/database.yml` before scaling out.

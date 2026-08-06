@@ -39,6 +39,40 @@ jobs:
       - name: Scan for security vulnerabilities in JavaScript dependencies
         run: bin/importmap audit
 
+  mobile:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: mobile
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v7
+
+      - name: Set up Node
+        uses: actions/setup-node@v7
+        with:
+          # React Native 0.86 refuses to build below 20.19.4, which is what
+          # mobile/package.json pins in engines.node.
+          node-version: 22.x
+          cache: npm
+          cache-dependency-path: mobile/package-lock.json
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Lint the Expo app
+        run: npm run lint
+
+      - name: Typecheck the Expo app
+        run: npm run typecheck
+
+      - name: Scan for known security vulnerabilities in npm dependencies
+        # bin/importmap audit above covers the Rails importmap only, not this
+        # tree. Held at high because Expo's own build toolchain currently pulls
+        # in moderate advisories that nothing here can resolve.
+        run: npm audit --audit-level=high
+
   lint:
     runs-on: ubuntu-latest
     env:

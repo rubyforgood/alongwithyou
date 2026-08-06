@@ -22,6 +22,8 @@ export default function AppTabs() {
 
       <NativeTabs.Trigger name="tasks">
         <NativeTabs.Trigger.Label>Tasks</NativeTabs.Trigger.Label>
+        {/* Borrowing the home icon: assets/images/tabIcons has nothing for a
+            task list yet, and this tab needs one at 1x, 2x and 3x. */}
         <NativeTabs.Trigger.Icon
           src={require('@/assets/images/tabIcons/home.png')}
           renderingMode="template"

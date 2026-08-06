@@ -55,6 +55,7 @@ physical iPhone without a Mac.
 - `src/hooks/`, `src/constants/` — theming and colour scheme
 - `src/lib/api.ts` — typed client for the Rails API
 - `assets/` — icons and splash screens
+- `types/` — ambient declarations TypeScript cannot infer on its own
 - `app.json` — Expo configuration
 
 The `@/` import alias points at `src/`.
