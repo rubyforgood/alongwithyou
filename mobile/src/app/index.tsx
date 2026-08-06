@@ -69,38 +69,41 @@ export default function LandingScreen() {
         paddingTop: insets.top + WebHeaderInset + Spacing.five,
         paddingBottom: insets.bottom + BottomTabInset + Spacing.five,
       }}>
-      <View className="w-full max-w-lg gap-8 self-center px-6">
-        <View className="gap-5">
-          <View className="bg-primary size-16 items-center justify-center rounded-2xl">
-            <Icon as={NotebookPen} size={28} className="text-primary-foreground" />
+      {/* items-center centres the hero on the cross axis, which is why the card
+          and the buttons below need w-full - otherwise they shrink to their
+          content. */}
+      <View className="w-full max-w-lg items-center gap-6 self-center px-6">
+        <View className="items-center gap-4">
+          <View className="bg-primary size-14 items-center justify-center rounded-2xl">
+            <Icon as={NotebookPen} size={26} className="text-primary-foreground" />
           </View>
 
-          <View className="gap-3">
+          <View className="items-center gap-2">
             <Text variant="small" className="text-muted-foreground uppercase tracking-widest">
               Along With You
             </Text>
             {/* variant h1 for the heading role and aria-level; the classes walk
-                back its default centring and extra-bold weight, which read
-                louder than this screen wants to be. */}
-            <Text variant="h1" className="text-left text-3xl font-semibold leading-10">
+                back its extra-bold weight, which reads louder than this screen
+                wants to be. */}
+            <Text variant="h1" className="text-3xl font-semibold leading-9">
               A quiet place for your own words.
             </Text>
-            <Text variant="lead" className="text-lg leading-7">
-              Write down how you are feeling, what your care team said, and the questions you want
-              to ask next time. It is yours, and there is no right way to do it.
+            <Text variant="lead" className="text-center text-lg leading-7">
+              Write down how you are feeling, what your care team said, and what you want to ask
+              next time.
             </Text>
           </View>
         </View>
 
-        <Card className="gap-6 py-6">
-          <CardContent className="gap-6">
+        <Card className="w-full py-5">
+          <CardContent className="gap-5">
             {REASSURANCES.map((item) => (
               <Reassurance key={item.title} {...item} />
             ))}
           </CardContent>
         </Card>
 
-        <View className="gap-3">
+        <View className="w-full gap-2">
           {/* /tasks is the placeholder resource the README describes - it is
               where journal entries will live once Task is replaced. */}
           <Link href="/tasks" asChild>
@@ -115,7 +118,7 @@ export default function LandingScreen() {
           </Link>
         </View>
 
-        <Text variant="muted" className="text-center">
+        <Text variant="muted" className="w-full text-center">
           A journal, not medical advice. Your care team is always the place for that.
         </Text>
       </View>
