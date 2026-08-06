@@ -5,17 +5,46 @@
 // +middleware - so a tasks.test.tsx beside tasks.tsx would ship as /tasks.test.
 // Anything testing a screen goes in src/__tests__/ instead.
 
+const { transform, transformIgnorePatterns } = require('jest-expo/jest-preset');
+
+// Two of the packages the React Native Reusables components sit on need babel
+// run over them before jest can load them at all: @rn-primitives publishes JSX
+// rather than compiled JavaScript, and lucide-react-native publishes ESM under
+// the `react-native` export condition. Miss either and a test that renders
+// anything from src/components/ui/ fails inside node_modules on
+// `Unexpected token '<'` or `Unexpected token 'export'`.
+//
+// transformIgnorePatterns is a key jest replaces rather than merges, and the
+// first of jest-expo's three patterns is already an allowlist of node_modules to
+// transform, so the two names belong inside that one. If a jest-expo upgrade
+// changes its shape the replace below quietly stops matching and those syntax
+// errors come back - this is the line to look at.
+const [nodeModulesToTransform, ...otherIgnorePatterns] = transformIgnorePatterns;
+
 /** @type {import('jest').Config} */
 const config = {
   preset: 'jest-expo',
+
+  transformIgnorePatterns: [
+    nodeModulesToTransform.replace('(?!(', '(?!(@rn-primitives|lucide-react-native|'),
+    ...otherIgnorePatterns,
+  ],
 
   setupFilesAfterEnv: ['<rootDir>/jest/setup.ts'],
 
   // Jest merges moduleNameMapper and transform with the preset's own entries
   // rather than replacing them.
+  transform: {
+    // Allowing lucide-react-native through above is not enough on its own:
+    // jest-expo only hands .js, .jsx, .ts and .tsx to babel, and the files in
+    // question are .mjs. Same babel-jest setup, wider net.
+    '\\.mjs$': transform['\\.[jt]sx?$'],
+  },
+
   moduleNameMapper: {
-    // constants/theme.ts imports global.css for the web font variables. Metro
-    // resolves CSS, jest does not, and nothing under test reads those values.
+    // The root layout imports global.css so NativeWind can compile it. Metro
+    // resolves CSS, jest does not, and nothing under test reads those values -
+    // className props survive the trip as plain props.
     '\\.css$': '<rootDir>/jest/style-mock.js',
   },
 
