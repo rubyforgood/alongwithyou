@@ -142,10 +142,13 @@ bin/ci                             # the Ruby half: rubocop, brakeman, audits, t
 cd mobile
 npm run typecheck                  # TypeScript
 npm run lint                       # ESLint
+npm test                           # jest, via jest-expo
 ```
 
 `bin/ci` covers Ruby only. GitHub Actions runs both halves: the `mobile` job
-lints, typechecks and audits the Expo app on every pull request.
+lints, typechecks, tests and audits the Expo app on every pull request. See
+`mobile/README.md` for where mobile tests live and why screen tests cannot sit
+in `src/app/`.
 
 Rubocop, Brakeman and the Docker build context all skip `mobile/`, since its
 `node_modules` ships Ruby CocoaPods scripts that would otherwise be linted and

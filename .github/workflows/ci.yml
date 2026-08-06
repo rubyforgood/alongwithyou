@@ -67,6 +67,9 @@ jobs:
       - name: Typecheck the Expo app
         run: npm run typecheck
 
+      - name: Test the Expo app
+        run: npm test -- --ci
+
       - name: Scan for known security vulnerabilities in npm dependencies
         # bin/importmap audit above covers the Rails importmap only, not this
         # tree. Held at high because Expo's own build toolchain currently pulls
