@@ -33,7 +33,10 @@ export function AnimatedSplashOverlay() {
     },
   });
 
-  const image = <Image style={styles.image} source={require('@/assets/images/expo-logo.png')} />;
+  // splash-icon.png rather than expo-logo.png, which is the same file today.
+  // app.json's splash points at splash-icon.png too, so dropping real brand art
+  // in at that one path updates the native splash and this overlay together.
+  const image = <Image style={styles.image} source={require('@/assets/images/splash-icon.png')} />;
 
   return animate ? (
     <Animated.View
@@ -140,7 +143,10 @@ const styles = StyleSheet.create({
   },
   splashOverlay: {
     ...StyleSheet.absoluteFill,
-    backgroundColor: '#208AEF',
+    // rgb(35, 170, 172). This has to be the same colour as the splash
+    // backgroundColor in app.json: the native splash hands over to this overlay
+    // mid-launch, and any difference shows up as a flash of the wrong colour.
+    backgroundColor: '#23AAAC',
     alignItems: 'center',
     justifyContent: 'center',
     zIndex: 1000,

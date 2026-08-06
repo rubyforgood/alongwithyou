@@ -1,7 +1,10 @@
 import { Icon } from '@/components/ui/icon';
 import { cn } from '@/lib/utils';
 import * as CheckboxPrimitive from '@rn-primitives/checkbox';
-import { Check } from 'lucide-react-native';
+// Deep import rather than `{ Check } from 'lucide-react-native'`: Metro does not
+// tree-shake, and the barrel is ~1500 icons and about 1.8MB of bundle. A future
+// `cli add checkbox --overwrite` will put the barrel import back.
+import Check from 'lucide-react-native/icons/check';
 import { Platform } from 'react-native';
 
 const DEFAULT_HIT_SLOP = 24;

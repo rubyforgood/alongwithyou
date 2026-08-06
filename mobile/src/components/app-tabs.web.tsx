@@ -7,13 +7,16 @@ import {
   TabListProps,
 } from 'expo-router/ui';
 import { SymbolView } from 'expo-symbols';
-import { Pressable, useColorScheme, View, StyleSheet } from 'react-native';
+import { Pressable, useColorScheme, useWindowDimensions, View, StyleSheet } from 'react-native';
 
 import { ExternalLink } from './external-link';
 import { ThemedText } from './themed-text';
 import { ThemedView } from './themed-view';
 
-import { Colors, MaxContentWidth, Spacing } from '@/constants/theme';
+import { Colors, MaxContentWidth, Spacing, WebHeaderInset } from '@/constants/theme';
+
+/** Below this the header drops the brand name so the tabs still fit. */
+const COMPACT_WIDTH = 600;
 
 export default function AppTabs() {
   return (
@@ -53,13 +56,24 @@ export function TabButton({ children, isFocused, ...props }: TabTriggerSlotProps
 export function CustomTabList(props: TabListProps) {
   const scheme = useColorScheme();
   const colors = Colors[scheme === 'unspecified' ? 'light' : scheme];
+  // The brand name plus three tabs plus the Docs link need about 510px. Below
+  // that the row cannot shrink - none of the children wrap - so it used to hang
+  // off both edges of a phone with the brand name 28px past the left of the
+  // screen. Narrow gets the tabs centred on their own; the landing page says the
+  // name right underneath anyway.
+  const { width } = useWindowDimensions();
+  const compact = width < COMPACT_WIDTH;
 
   return (
     <View {...props} style={styles.tabListContainer}>
-      <ThemedView type="backgroundElement" style={styles.innerContainer}>
-        <ThemedText type="smallBold" style={styles.brandText}>
-          Along With You
-        </ThemedText>
+      <ThemedView
+        type="backgroundElement"
+        style={[styles.innerContainer, compact && styles.innerContainerCompact]}>
+        {!compact && (
+          <ThemedText type="smallBold" style={styles.brandText}>
+            Along With You
+          </ThemedText>
+        )}
 
         {props.children}
 
@@ -82,7 +96,13 @@ const styles = StyleSheet.create({
   tabListContainer: {
     position: 'absolute',
     width: '100%',
-    padding: Spacing.three,
+    // Stated rather than left to come out of the padding below, so screens can
+    // pad for it by the same constant. See WebHeaderInset.
+    height: WebHeaderInset,
+    // Spacing.four horizontally to line the bar up with the px-6 the screens
+    // use, rather than sitting 8px wider than the content underneath it.
+    paddingVertical: Spacing.three,
+    paddingHorizontal: Spacing.four,
     justifyContent: 'center',
     alignItems: 'center',
     flexDirection: 'row',
@@ -96,6 +116,10 @@ const styles = StyleSheet.create({
     flexGrow: 1,
     gap: Spacing.two,
     maxWidth: MaxContentWidth,
+  },
+  innerContainerCompact: {
+    paddingHorizontal: Spacing.two,
+    justifyContent: 'center',
   },
   brandText: {
     marginRight: 'auto',

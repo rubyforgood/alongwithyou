@@ -16,66 +16,88 @@
   --font-serif: Georgia, 'Times New Roman', serif;
 }
 
-/* React Native Reusables design tokens. Everything in src/components/ui/ styles
-   itself from these, and tailwind.config.js maps them onto Tailwind colour
-   names, which is how `bg-background` or `text-muted-foreground` follow the
-   colour scheme without a single conditional.
+/* The theme. Everything in src/components/ui/ styles itself from these tokens,
+   and tailwind.config.js maps them onto Tailwind colour names, which is how
+   `bg-primary` or `text-muted-foreground` follow the colour scheme without a
+   single conditional. src/lib/theme.ts mirrors the same values as plain colour
+   strings for the places that take a colour rather than a class name, and
+   src/constants/theme.ts derives the older `Colors` palette from those - so
+   changing a colour here reaches the whole app, but all three want to agree.
 
-   The values are `H S% L%` triplets rather than colours; tailwind.config.js
-   wraps them in hsl(). src/lib/theme.ts mirrors them for the places that need a
-   plain colour string instead of a class name - keep the two in step.
-   https://reactnativereusables.com/docs/customization */
+   Values are `H S% L%` triplets, not colours; tailwind.config.js wraps them in
+   hsl(). https://reactnativereusables.com/docs/customization
+
+   ---
+
+   The brand teal is rgb(35, 170, 172) - hsl(181 66% 41%), #23AAAC. It is the
+   primary in dark mode, where it carries dark text at 6.4:1.
+
+   In light mode the primary is the same hue and saturation taken down to 29%
+   lightness (#19797B). The brand teal itself is too light to put white text on:
+   2.8:1, where WCAG AA asks for 4.5:1 on text this size, and it fails the 3:1
+   for icons and focus rings as well. Deepening it gets 5.2:1 for a white label
+   and 5.1:1 as ink on the background, so one teal covers buttons, links, icons
+   and rings rather than needing a second shade for each. The brand teal stays
+   on as --chart-1 and behind dark text.
+
+   This matters more than usual here: the people using this are often tired,
+   often reading on a phone in bad light, often older. Every pair below clears
+   WCAG AA - 4.5:1 for text, 3:1 for interface colour - in both schemes. If you
+   change a value, check it. */
 @layer base {
   :root {
-    --background: 0 0% 100%;
-    --foreground: 0 0% 3.9%;
-    --card: 0 0% 100%;
-    --card-foreground: 0 0% 3.9%;
-    --popover: 0 0% 100%;
-    --popover-foreground: 0 0% 3.9%;
-    --primary: 0 0% 9%;
-    --primary-foreground: 0 0% 98%;
-    --secondary: 0 0% 96.1%;
-    --secondary-foreground: 0 0% 9%;
-    --muted: 0 0% 96.1%;
-    --muted-foreground: 0 0% 45.1%;
-    --accent: 0 0% 96.1%;
-    --accent-foreground: 0 0% 9%;
-    --destructive: 0 84.2% 60.2%;
-    --border: 0 0% 89.8%;
-    --input: 0 0% 89.8%;
-    --ring: 0 0% 63%;
-    --radius: 0.625rem;
-    --chart-1: 12 76% 61%;
-    --chart-2: 173 58% 39%;
-    --chart-3: 197 37% 24%;
-    --chart-4: 43 74% 66%;
-    --chart-5: 27 87% 67%;
+    --background: 180 30% 99%; /* #FCFDFD */
+    --foreground: 196 28% 16%; /* #1D2E34 */
+    --card: 0 0% 100%; /* #FFFFFF */
+    --card-foreground: 196 28% 16%; /* #1D2E34 */
+    --popover: 0 0% 100%; /* #FFFFFF */
+    --popover-foreground: 196 28% 16%; /* #1D2E34 */
+    --primary: 181 66% 29%; /* #19797B */
+    --primary-foreground: 0 0% 100%; /* #FFFFFF */
+    --secondary: 180 30% 95%; /* #EEF6F6 */
+    --secondary-foreground: 194 30% 22%; /* #274149 */
+    --muted: 180 28% 96%; /* #F2F8F8 */
+    --muted-foreground: 196 14% 40%; /* #586D74 */
+    --accent: 181 40% 92%; /* #E2F2F3 */
+    --accent-foreground: 193 45% 22%; /* #1F4651 */
+    --destructive: 352 58% 45%; /* #B53042 */
+    --destructive-foreground: 0 0% 100%; /* #FFFFFF */
+    --border: 185 22% 88%; /* #DAE6E7 */
+    --input: 185 22% 85%; /* #D0E0E1 */
+    --ring: 181 66% 29%; /* #19797B */
+    --radius: 0.875rem;
+    --chart-1: 181 66% 41%; /* #24ABAE - the brand teal */
+    --chart-2: 196 55% 42%; /* #3087A6 */
+    --chart-3: 168 45% 38%; /* #358D7B */
+    --chart-4: 210 45% 52%; /* #4E85BC */
+    --chart-5: 30 52% 55%; /* #C88C51 */
   }
 
   .dark:root {
-    --background: 0 0% 3.9%;
-    --foreground: 0 0% 98%;
-    --card: 0 0% 3.9%;
-    --card-foreground: 0 0% 98%;
-    --popover: 0 0% 3.9%;
-    --popover-foreground: 0 0% 98%;
-    --primary: 0 0% 98%;
-    --primary-foreground: 0 0% 9%;
-    --secondary: 0 0% 14.9%;
-    --secondary-foreground: 0 0% 98%;
-    --muted: 0 0% 14.9%;
-    --muted-foreground: 0 0% 63.9%;
-    --accent: 0 0% 14.9%;
-    --accent-foreground: 0 0% 98%;
-    --destructive: 0 70.9% 59.4%;
-    --border: 0 0% 14.9%;
-    --input: 0 0% 14.9%;
-    --ring: 300 0% 45%;
-    --chart-1: 220 70% 50%;
-    --chart-2: 160 60% 45%;
-    --chart-3: 30 80% 55%;
-    --chart-4: 280 65% 60%;
-    --chart-5: 340 75% 55%;
+    --background: 196 30% 8%; /* #0E171B */
+    --foreground: 180 18% 94%; /* #EDF2F2 */
+    --card: 196 26% 11%; /* #151F23 */
+    --card-foreground: 180 18% 94%; /* #EDF2F2 */
+    --popover: 196 26% 11%; /* #151F23 */
+    --popover-foreground: 180 18% 94%; /* #EDF2F2 */
+    --primary: 181 66% 41%; /* #24ABAE - the brand teal */
+    --primary-foreground: 192 50% 8%; /* #0A1B1F */
+    --secondary: 196 22% 17%; /* #223035 */
+    --secondary-foreground: 180 16% 92%; /* #E7EEEE */
+    --muted: 196 22% 16%; /* #202D32 */
+    --muted-foreground: 188 14% 68%; /* #A2B6B9 */
+    --accent: 194 26% 22%; /* #2A4047 */
+    --accent-foreground: 180 16% 92%; /* #E7EEEE */
+    --destructive: 352 55% 48%; /* #BE3749 */
+    --destructive-foreground: 0 0% 100%; /* #FFFFFF */
+    --border: 196 20% 20%; /* #29383D */
+    --input: 196 20% 24%; /* #314349 */
+    --ring: 181 66% 41%; /* #24ABAE */
+    --radius: 0.875rem;
+    --chart-1: 181 62% 55%; /* #45D1D3 */
+    --chart-2: 196 58% 58%; /* #56B1D2 */
+    --chart-3: 168 45% 52%; /* #4EBCA6 */
+    --chart-4: 210 50% 64%; /* #75A3D1 */
+    --chart-5: 30 55% 62%; /* #D39E69 */
   }
 }
