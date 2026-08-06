@@ -4,7 +4,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
-import { BottomTabInset, MaxContentWidth, Spacing } from '@/constants/theme';
+import { BottomTabInset, MaxContentWidth, Spacing, WebHeaderInset } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
 import { API_BASE_URL, ApiError, Task, tasks } from '@/lib/api';
 
@@ -95,7 +95,7 @@ export default function TasksScreen() {
         style={[
           styles.content,
           {
-            paddingTop: insets.top + Spacing.three,
+            paddingTop: insets.top + WebHeaderInset + Spacing.three,
             paddingBottom: insets.bottom + BottomTabInset + Spacing.three,
           },
         ]}>

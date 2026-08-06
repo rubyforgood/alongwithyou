@@ -23,7 +23,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Icon } from '@/components/ui/icon';
 import { Text } from '@/components/ui/text';
-import { BottomTabInset, Spacing } from '@/constants/theme';
+import { BottomTabInset, Spacing, WebHeaderInset } from '@/constants/theme';
 
 const REASSURANCES: { icon: LucideIcon; title: string; body: string }[] = [
   {
@@ -64,7 +64,9 @@ export default function LandingScreen() {
     <ScrollView
       className="bg-background flex-1"
       contentContainerStyle={{
-        paddingTop: insets.top + Spacing.five,
+        // WebHeaderInset for the floating header on web, insets.top for the
+        // status bar on a phone. Each is zero where the other applies.
+        paddingTop: insets.top + WebHeaderInset + Spacing.five,
         paddingBottom: insets.bottom + BottomTabInset + Spacing.five,
       }}>
       <View className="w-full max-w-lg gap-8 self-center px-6">

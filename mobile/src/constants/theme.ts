@@ -73,4 +73,19 @@ export const Spacing = {
 } as const;
 
 export const BottomTabInset = Platform.select({ ios: 50, android: 80 }) ?? 0;
+
+/**
+ * How much room a screen has to leave at the top on web.
+ *
+ * Web does not get the native tab bar; app-tabs.web.tsx draws a floating header
+ * instead, and it is absolutely positioned, so content scrolls underneath it
+ * unless the screen pads for it. Nothing was: the header is 78px tall, and the
+ * screens variously left 0, 16 or 64, which is how the logo ended up behind it.
+ *
+ * app-tabs.web.tsx sets this as the header's own height rather than letting it
+ * come out of its padding, so the two cannot drift apart. Zero everywhere else,
+ * where the tab bar is at the bottom and `BottomTabInset` above covers it.
+ */
+export const WebHeaderInset = Platform.select({ web: 78 }) ?? 0;
+
 export const MaxContentWidth = 800;

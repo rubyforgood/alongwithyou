@@ -13,7 +13,7 @@ import { ExternalLink } from './external-link';
 import { ThemedText } from './themed-text';
 import { ThemedView } from './themed-view';
 
-import { Colors, MaxContentWidth, Spacing } from '@/constants/theme';
+import { Colors, MaxContentWidth, Spacing, WebHeaderInset } from '@/constants/theme';
 
 export default function AppTabs() {
   return (
@@ -82,6 +82,9 @@ const styles = StyleSheet.create({
   tabListContainer: {
     position: 'absolute',
     width: '100%',
+    // Stated rather than left to come out of the padding below, so screens can
+    // pad for it by the same constant. See WebHeaderInset.
+    height: WebHeaderInset,
     padding: Spacing.three,
     justifyContent: 'center',
     alignItems: 'center',
