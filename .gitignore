@@ -37,6 +37,18 @@
 # which surface as real files when the repo lives on a WSL mount.
 *:Zone.Identifier
 
+# Ignore the metadata macOS leaves in directories it has browsed. The note at the
+# top of this file is right that this belongs in a global ignore, but the same
+# reasoning as the line above applies: this repo gets mounted into a container
+# from a Mac, and the file then shows up in `git status` for whoever is working
+# inside the container, where their global ignore is not.
+.DS_Store
+
+# Ignore rendered screenshots of the phone app. Useful for looking over a UI
+# change - `mobile/` exports for web, and a headless browser shoots the result -
+# but they are large binaries that go stale immediately.
+/ui-review/
+
 # Ignore core dumps. Tooling that crashes here drops one next to the process,
 # and they are large enough to be worth never committing by accident. Numbered
 # suffix only, so a file like core.rb is untouched.
