@@ -95,6 +95,15 @@ module Api
         assert @task.reload.completed
       end
 
+      test "update reports a null completion as a validation error, not a 500" do
+        patch api_v1_task_url(@task), params: { task: { completed: nil } }, as: :json
+
+        assert_response :unprocessable_entity
+        assert_equal "application/json", response.media_type
+        assert_includes response.parsed_body["errors"]["completed"], "must be true or false"
+        assert_not @task.reload.completed
+      end
+
       test "update reports validation errors" do
         patch api_v1_task_url(@task), params: { task: { title: "" } }, as: :json
 

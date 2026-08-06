@@ -17,6 +17,18 @@ class TaskTest < ActiveSupport::TestCase
     assert_not Task.create!(title: "Something").completed
   end
 
+  test "rejects a completed flag that is neither true nor false" do
+    task = Task.new(title: "Something", completed: nil)
+
+    assert_not task.valid?
+    assert_includes task.errors[:completed], "must be true or false"
+  end
+
+  test "accepts anything that casts to a boolean" do
+    assert Task.new(title: "Something", completed: "1").valid?
+    assert Task.new(title: "Something", completed: "0").valid?
+  end
+
   test "newest_first orders by creation time descending" do
     older = Task.create!(title: "Older", created_at: 2.days.ago)
     newer = Task.create!(title: "Newer", created_at: 1.day.ago)
