@@ -41,6 +41,8 @@ jobs:
 
   mobile:
     runs-on: ubuntu-latest
+    env:
+      JEST_CACHE_DIR: /tmp/jest-cache
     defaults:
       run:
         working-directory: mobile
@@ -67,8 +69,26 @@ jobs:
       - name: Typecheck the Expo app
         run: npm run typecheck
 
+      # Almost all of this job's test time is babel transforming node_modules -
+      # ~6k files, 45s of a 48s run - and jest only does it once per unchanged
+      # dependency tree. Restoring its cache takes the step to ~15s. The key
+      # covers anything that invalidates a transform: the lockfile, the babel
+      # config, and the transformIgnorePatterns work in the jest config.
+      - name: Prepare Jest cache
+        uses: actions/cache@v6
+        env:
+          DEPENDENCIES_HASH: ${{ hashFiles('mobile/package-lock.json', 'mobile/babel.config.js', 'mobile/jest.config.js') }}
+        with:
+          path: ${{ env.JEST_CACHE_DIR }}
+          key: jest-${{ runner.os }}-${{ env.DEPENDENCIES_HASH }}-${{ github.ref_name == github.event.repository.default_branch && github.run_id || 'default' }}
+          restore-keys: |
+            jest-${{ runner.os }}-${{ env.DEPENDENCIES_HASH }}-
+
       - name: Test the Expo app
-        run: npm test -- --ci
+        # --cacheDirectory rather than a cacheDirectory in mobile/jest.config.js,
+        # which explains why: a cache under the working tree is slow to read on
+        # the bind-mounted checkouts some contributors run the tests from.
+        run: npm test -- --ci --cacheDirectory="$JEST_CACHE_DIR"
 
       - name: Scan for known security vulnerabilities in npm dependencies
         # bin/importmap audit above covers the Rails importmap only, not this
