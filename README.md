@@ -13,6 +13,20 @@ The two halves are independent programs that talk over HTTP. Rails never renders
 the phone UI, and the phone app is not served by Rails; it is bundled by Metro
 in development and shipped to the app stores by EAS in production.
 
+> [!IMPORTANT]
+> The `Task` round trip above is a **starter-kit scaffold** proving the two
+> halves can talk to each other — it is not this product's real data
+> architecture. The actual decision (see
+> [`docs/decisions/0001-local-only-architecture.md`](docs/decisions/0001-local-only-architecture.md))
+> is that the patient journal — medications, contacts, medical history, care
+> preferences — lives **only** in an encrypted local database on the phone,
+> never in this Rails API. Rails stays scoped to non-journal concerns (the
+> org's public site, a donation page). **Don't copy the `Task`/`/api/v1`
+> pattern for a real journal model.** Read
+> [`docs/decisions/`](docs/decisions/README.md) — especially 0001 and
+> [0006 (excluded fields)](docs/decisions/0006-excluded-field-safety-boundary.md)
+> — before adding a new screen or data model.
+
 ## Requirements
 
 | | |
@@ -153,6 +167,14 @@ in `src/app/`.
 Rubocop, Brakeman and the Docker build context all skip `mobile/`, since its
 `node_modules` ships Ruby CocoaPods scripts that would otherwise be linted and
 scanned as if they were ours.
+
+## Product & architecture decisions
+
+Decisions that aren't obvious from the code — what's local-only vs. server-side,
+what data is excluded from the app entirely, how exports/backups are meant to
+work, who the app is designed for — live in
+[`docs/decisions/`](docs/decisions/README.md). Given the volunteer,
+rotating-contributor model, read that folder before you read the code.
 
 ## Next steps
 
