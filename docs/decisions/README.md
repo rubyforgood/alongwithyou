@@ -12,6 +12,10 @@ Each record has a status. **Decided** means treat it as settled — don't re-lit
 | [0004](0004-primary-user-caregiver-role.md) | Primary MVP user and caregiver role | Decided, with open sub-questions |
 | [0005](0005-grab-and-go-emergency-access.md) | What "grab and go" access means digitally | Decided |
 | [0006](0006-excluded-field-safety-boundary.md) | Excluded-field safety boundary (SSN, portal passwords, alarm code, key/wallet location) | Needs formal sign-off |
+| [0007](0007-authentication-recovery-deletion.md) | Authentication, account recovery, and data-deletion behavior | Decided |
+| [0008](0008-first-vertical-slice.md) | First representative vertical slice (Caregiver/Emergency Contacts) | Decided |
+| [0009](0009-hosting-support-incident-ownership.md) | Hosting, support, incident response, and long-term maintenance ownership | **Open** — needs a named owner from leadership, not a technical decision |
+| [0010](0010-account-creation.md) | Whether the org or partners create accounts for users | Decided |
 
 ## Related, not duplicated here
 
