@@ -49,6 +49,15 @@ const config = {
   },
 
   collectCoverageFrom: ['src/**/*.{ts,tsx}', '!src/**/*.d.ts'],
+
+  // cacheDirectory is deliberately left at jest's default of /tmp/jest_<uid>.
+  // A cold run babels ~6k files out of node_modules before the first component
+  // renders - 45s of a 48s run, against 14s warm - so CI caches that directory
+  // between runs, but it passes its own --cacheDirectory rather than setting it
+  // here: pointing this at <rootDir> puts 6k small files in the working tree,
+  // and reading them back over a bind mount (the repo mounted into Docker from
+  // a macOS host, say) costs minutes of blocked I/O - far more than the babel
+  // work it saves. See the Prepare Jest cache step in .github/workflows/ci.yml.
 };
 
 module.exports = config;

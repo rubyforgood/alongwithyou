@@ -40,6 +40,7 @@ core.*
 
 # jest
 coverage/
+.jest-cache/
 
 example
 
