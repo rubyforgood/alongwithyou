@@ -1,7 +1,10 @@
 # Along With You mobile app
 
 The React Native client, built with Expo SDK 57, TypeScript and Expo Router.
-The Rails application in the repository root is the backend.
+The Rails application in the repository root currently backs the `Tasks` demo
+screen, but **it is not the backend for the real patient journal** — see
+[Talking to Rails](#talking-to-rails) below and
+[`docs/decisions/0001-local-only-architecture.md`](../docs/decisions/0001-local-only-architecture.md).
 
 ## Prerequisites
 
@@ -152,7 +155,16 @@ Release builds have no Metro server to ask, so they require it.
 
 The **Tasks** tab is a working example of the round trip: it lists, creates,
 toggles and deletes records through `/api/v1/tasks`. `Task` is a placeholder
-resource, meant to be replaced with your real model.
+resource — but it's a placeholder for *this client/server round-trip pattern*,
+not a template to copy for real journal data. Per
+[`docs/decisions/0001`](../docs/decisions/0001-local-only-architecture.md), the
+actual medications/contacts/medical-history models are local-only (on-device
+SQLite, encrypted at rest), with no Rails involvement. If you're adding a real
+data model, check [`docs/decisions/`](../docs/decisions/README.md) first —
+0001 for where the data lives, and
+[0006](../docs/decisions/0006-excluded-field-safety-boundary.md) for fields
+that must not be collected at all (SSNs, portal passwords, alarm codes, exact
+key/wallet locations).
 
 ## Tests
 
@@ -191,6 +203,8 @@ Three things to know before writing more:
 
 ## Documentation
 
+- [`docs/decisions/`](../docs/decisions/README.md) — product & architecture
+  decisions (read this first)
 - [Expo documentation](https://docs.expo.dev/versions/v57.0.0/)
 - [Expo Router](https://docs.expo.dev/router/introduction/)
 - [React Native documentation](https://reactnative.dev/docs/getting-started)
