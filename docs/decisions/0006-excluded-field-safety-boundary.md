@@ -27,3 +27,28 @@ The Phase 1 "Medical Portals" ticket already goes further than this stated bound
 ## Sign-off
 
 Needs a named approver on record — recommend Roberta Talmage (product owner) plus both technical leads (Paul Smith, Jesse Berman) — so this doesn't get re-litigated per-field as each screen gets built. Once signed off, close the "track resolution of unapproved sensitive fields" risk-tracking ticket.
+
+## Paul
+  I'm approving this as an **MVP scope decision, not a permanent architectural
+  constraint.** Two sides to that:
+
+  - Nothing here should get baked in as a structural assumption that makes it
+    expensive to revisit later — no schema, encryption design, or export format
+    written as though these categories can never exist.
+  - Equally, no partial support and no placeholder columns "for later."
+    Excluded means not collected, not stored, not in the data model today.
+
+  We're excluding these because we don't yet have the security design to hold
+  them responsibly, not because a medical journal can never hold sensitive data.
+  If we build that design — the encryption work in 0003 actually shipped, a
+  written threat model, a real security review — I want the option to revisit
+  specific categories on the merits.
+
+  **SSN is the exception — I'd treat it as effectively closed.** The rationale
+  there isn't device risk, it's that name + SSN is a breach-notification trigger
+  in every state no matter how well we encrypt it. Better engineering doesn't
+  move that. Reopening it would need a legal read, not a security review.
+
+  Portal credentials and home-security data are the ones I'd genuinely leave
+  open. Both are correctly excluded now, and both are the kind of thing a
+  properly designed secrets store could hold later if there's real user need.
