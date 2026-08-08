@@ -32,3 +32,22 @@ Rails stays in the repo, scoped to non-journal purposes only: the org's website/
 
 - Write the formal ADR sign-off from both Paul and Jesse referencing this record (this file *is* that record — close the "write an ADR" backlog ticket by pointing here).
 - Correct the source product brief's phase table so "Rails API — Proposed" / "Offline behavior — Open" stop reading as live questions.
+
+## Paul
+  Approving local-only for MVP: the journal lives in the encrypted local
+  database on the device, and Rails carries the org site and donation page, not
+  journal data.
+
+  **Condition: multi-device use, cross-device sync, and cloud backup are
+  deferred, not permanently ruled out.** They're out of MVP because we don't
+  need them yet and they'd put the org in custody of patient data before we're
+  ready for it — not because this product should never have them.
+
+  One caveat on mechanism: full encrypted backups cover cloud backup and moving
+  to a new phone cleanly — 0003 already scopes most of that. They don't give us
+  two devices in active use at once, since restoring B's backup onto A destroys
+  whatever A did in between. So I'm committing to keeping the option open, not
+  to a particular mechanism.
+  
+  Closing #22 alongside this, and #27 by pointing at 0001 as the record. Needs
+  Jesse's sign-off before the status is final.
