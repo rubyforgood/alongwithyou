@@ -16,6 +16,7 @@ Each record has a status. **Decided** means treat it as settled — don't re-lit
 | [0008](0008-first-vertical-slice.md) | First representative vertical slice (Caregiver/Emergency Contacts) | Decided |
 | [0009](0009-hosting-support-incident-ownership.md) | Hosting, support, incident response, and long-term maintenance ownership | **Open** — needs a named owner from leadership, not a technical decision |
 | [0010](0010-account-creation.md) | Whether the org or partners create accounts for users | Decided |
+| [0011](0011-dietary-nutrition-shape.md) | Section 8 (Dietary/Nutrition) shape — static profile, dated log, or both | Decided |
 
 ## Related, not duplicated here
 
