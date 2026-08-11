@@ -17,6 +17,9 @@ Each record has a status. **Decided** means treat it as settled — don't re-lit
 | [0009](0009-hosting-support-incident-ownership.md) | Hosting, support, incident response, and long-term maintenance ownership | **Open** — needs a named owner from leadership, not a technical decision |
 | [0010](0010-account-creation.md) | Whether the org or partners create accounts for users | Decided |
 | [0011](0011-dietary-nutrition-shape.md) | Section 8 (Dietary/Nutrition) shape — static profile, dated log, or both | Decided |
+| [0012](0012-medicine-diary-drug-data-source.md) | Medicine Diary drug data source (RxNorm primary, openFDA secondary) | Needs formal sign-off |
+| [0013](0013-medicine-diary-on-device-drug-search.md) | Medicine Diary drug search — on-device catalog, two-database split, no user data server-side | Decided by Paul; needs Jesse's sign-off |
+| [0014](0014-medicine-diary-shape.md) | Section 2 (Medicine Diary) shape — current list, dated log, or both | **Open** — product call, needs a named owner |
 
 ## Related, not duplicated here
 
