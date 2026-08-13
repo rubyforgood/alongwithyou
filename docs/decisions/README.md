@@ -20,10 +20,14 @@ Each record has a status. **Decided** means treat it as settled — don't re-lit
 | [0012](0012-medicine-diary-drug-data-source.md) | Medicine Diary drug data source (RxNorm primary, openFDA secondary) | Needs formal sign-off |
 | [0013](0013-medicine-diary-on-device-drug-search.md) | Medicine Diary drug search — on-device catalog, two-database split, no user data server-side | Decided by Paul; needs Jesse's sign-off |
 | [0014](0014-medicine-diary-shape.md) | Section 2 (Medicine Diary) shape — current list, dated log, or both | **Open** — product call, needs a named owner |
+| [0015](0015-database-key-storage.md) | Database key storage and the biometric boundary | Proposed — needs technical-lead sign-off |
+| [0016](0016-development-builds-required.md) | Development builds required; Expo Go no longer runs this app | Proposed — workflow cost needs accepting |
+| [0017](0017-journal-data-is-native-only.md) | Journal data is native-only; web is not a journal surface | Proposed — needs sign-off |
+| [0018](0018-no-device-lock-behaviour.md) | Unlock behaviour on a device with no lock screen | **Open** — product call, needs a named owner |
 
 ## Related, not duplicated here
 
-- Local database encryption (SQLCipher, biometric unlock) was decided separately and lives in `architecture-plan.md` in the team's shared docs — not repeated here since it's a separate decision from what this folder covers (data *leaving* the device vs. data at rest).
+- Local database encryption (SQLCipher, biometric unlock) was decided in `architecture-plan.md` in the team's shared docs — the *direction* is not re-litigated here. What that document left unspecified, and what building it turned up, is now recorded: [0015](0015-database-key-storage.md) for where the key lives, [0016](0016-development-builds-required.md) and [0017](0017-journal-data-is-native-only.md) for what encrypting the database costs elsewhere.
 - Full content/data model audit (all 11 paper-journal sections, phased ticket backlog) lives in the team's `project-plan-and-tickets.md` — this folder covers cross-cutting product/legal/architecture decisions, not the per-screen field list.
 
 ## Adding a new record
