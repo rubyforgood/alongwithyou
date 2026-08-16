@@ -6,6 +6,7 @@ import {
   DatabaseUnavailableError,
   destroyJournalDatabase,
   getJournalDatabase,
+  SQLCipherUnavailableError,
   UnrecoverableJournalError,
 } from './database';
 import { deleteDatabaseKey, getOrCreateDatabaseKey } from './key';
@@ -35,6 +36,9 @@ function setPlatform(os: typeof Platform.OS) {
   (Platform as { OS: typeof Platform.OS }).OS = os;
 }
 
+/** What a SQLCipher build answers `PRAGMA cipher_version` with. */
+const CIPHER_VERSION = { cipher_version: '4.6.1 community' };
+
 /** Records the statements run against it, in order. */
 function fakeDatabase() {
   const statements: string[] = [];
@@ -43,12 +47,26 @@ function fakeDatabase() {
     execAsync: jest.fn(async (sql: string) => {
       statements.push(sql);
     }),
-    getFirstAsync: jest.fn(async (sql: string) => {
+    // Return type widened on purpose: expo-sqlite resolves null for no rows,
+    // and tests below re-implement this to do exactly that.
+    getFirstAsync: jest.fn(async (sql: string): Promise<Record<string, unknown> | null> => {
       statements.push(sql);
+      // Stock SQLite returns no row here; a SQLCipher build returns a version.
+      // Defaulting to present keeps every other test about its own subject.
+      if (sql.includes('cipher_version')) return CIPHER_VERSION;
       return { 'count(*)': 0 };
     }),
     closeAsync: jest.fn(async () => undefined),
   };
+}
+
+/** Stock SQLite: accepts PRAGMA key, ignores it, and has no cipher_version. */
+function withoutSQLCipher() {
+  db.getFirstAsync.mockImplementation(async (sql: string) => {
+    db.statements.push(sql);
+    if (sql.includes('cipher_version')) return null;
+    return { 'count(*)': 0 };
+  });
 }
 
 let db: ReturnType<typeof fakeDatabase>;
@@ -73,17 +91,21 @@ afterEach(async () => {
 });
 
 describe('getJournalDatabase', () => {
-  it('keys the connection before doing anything else with it', async () => {
+  it('keys the connection before anything touches the database', async () => {
     await getJournalDatabase();
 
-    // If any statement precedes the key, SQLCipher has already decided the file
-    // is not a database and the rest is noise.
-    expect(db.statements[0]).toBe(`PRAGMA key = "x'${KEY}'"`);
+    // If a statement that reads or writes precedes the key, SQLCipher has
+    // already decided the file is not a database and the rest is noise. The one
+    // thing allowed in front is cipher_version, which asks the library instead.
+    const touchesData = db.statements.filter((sql) => !sql.includes('cipher_version'));
+    expect(touchesData[0]).toBe(`PRAGMA key = "x'${KEY}'"`);
   });
 
   it('forces a decrypt before handing the connection out', async () => {
     await getJournalDatabase();
-    expect(db.statements[1]).toMatch(/FROM sqlite_master/);
+
+    const keyed = db.statements.indexOf(`PRAGMA key = "x'${KEY}'"`);
+    expect(db.statements[keyed + 1]).toMatch(/FROM sqlite_master/);
   });
 
   it('sets WAL and foreign keys, then migrates', async () => {
@@ -129,11 +151,61 @@ describe('getJournalDatabase', () => {
   });
 });
 
+describe('a build without SQLCipher', () => {
+  it('refuses to open rather than writing a plaintext journal', async () => {
+    // The whole point. PRAGMA key is accepted and ignored by stock SQLite, and
+    // the schema read afterwards succeeds against a plaintext file, so without
+    // this check the app writes an unencrypted medical journal and says nothing.
+    withoutSQLCipher();
+
+    await expect(getJournalDatabase()).rejects.toThrow(SQLCipherUnavailableError);
+  });
+
+  it('checks before keying, so nothing is written to the file', async () => {
+    withoutSQLCipher();
+
+    await expect(getJournalDatabase()).rejects.toThrow(SQLCipherUnavailableError);
+    expect(db.statements).toEqual(['PRAGMA cipher_version']);
+  });
+
+  it('tells the reader how to get a build that works', async () => {
+    // Whoever hits this is running Expo Go or a stale prebuild, and the error
+    // is the only place they will find out.
+    withoutSQLCipher();
+
+    await expect(getJournalDatabase()).rejects.toThrow(/expo prebuild/);
+  });
+
+  it('closes the handle it refused to use', async () => {
+    withoutSQLCipher();
+
+    await expect(getJournalDatabase()).rejects.toThrow(SQLCipherUnavailableError);
+    expect(db.closeAsync).toHaveBeenCalled();
+  });
+
+  it('is not reported as a generic open failure', async () => {
+    // "Could not open the journal database" would send someone looking at the
+    // database. The problem is the binary.
+    withoutSQLCipher();
+
+    await expect(getJournalDatabase()).rejects.not.toThrow(DatabaseUnavailableError);
+  });
+});
+
 describe('a journal that no key can open', () => {
   /** A key we just minted cannot fail against a file we just created. */
   function restoredFromAnotherPhone() {
     getKey.mockResolvedValue({ key: KEY, created: true });
-    db.getFirstAsync.mockRejectedValue(new Error('file is not a database'));
+    failToDecrypt();
+  }
+
+  /** SQLCipher is present; it is this particular file it cannot read. */
+  function failToDecrypt() {
+    db.getFirstAsync.mockImplementation(async (sql: string) => {
+      db.statements.push(sql);
+      if (sql.includes('cipher_version')) return CIPHER_VERSION;
+      throw new Error('file is not a database');
+    });
   }
 
   it('is reported as its own error rather than a generic open failure', async () => {
@@ -167,7 +239,7 @@ describe('a journal that no key can open', () => {
     // corruption or something else - not a journal from another phone. Deleting
     // the key here would destroy a database that might still be readable.
     getKey.mockResolvedValue({ key: KEY, created: false });
-    db.getFirstAsync.mockRejectedValue(new Error('file is not a database'));
+    failToDecrypt();
 
     await expect(getJournalDatabase()).rejects.toThrow(DatabaseUnavailableError);
     expect(deleteKey).not.toHaveBeenCalled();

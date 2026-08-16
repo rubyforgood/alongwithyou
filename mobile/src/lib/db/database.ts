@@ -52,6 +52,36 @@ export class UnrecoverableJournalError extends Error {
 }
 
 /**
+ * This build has no SQLCipher, so nothing here would be encrypted.
+ *
+ * The reason this needs its own check is that the failure is otherwise
+ * completely silent. SQLite ignores pragmas it does not recognise rather than
+ * erroring, so on a plain build `PRAGMA key` is accepted and does nothing, the
+ * schema read afterwards succeeds against a plaintext file, and the app writes
+ * an unencrypted medical journal with no error, no warning, and nothing that
+ * distinguishes it from the encrypted case.
+ *
+ * That is not a theoretical build. `useSQLCipher` is applied by a config plugin
+ * at prebuild, so Expo Go has never had it, and neither does a stale ios/ or
+ * android/ directory generated before it was set.
+ *
+ * 0017 refuses an unencrypted fallback on web for exactly this reason - a
+ * silent downgrade makes the privacy promise untrue in the way nobody notices
+ * until it matters. The same has to hold for a build that lost SQLCipher.
+ */
+export class SQLCipherUnavailableError extends Error {
+  constructor(message: string) {
+    super(message);
+    this.name = 'SQLCipherUnavailableError';
+  }
+}
+
+/** Errors that already explain themselves; wrapping them would lose that. */
+function isDiagnosed(error: unknown): boolean {
+  return error instanceof UnrecoverableJournalError || error instanceof SQLCipherUnavailableError;
+}
+
+/**
  * Cached as the in-flight promise, not the resolved handle, so that two screens
  * mounting at once share one open rather than racing to create two. Cleared on
  * failure so a retry is not permanently poisoned by one bad open.
@@ -75,7 +105,13 @@ async function open(): Promise<SQLiteDatabase> {
   const db = await SQLite.openDatabaseAsync(DATABASE_NAME);
 
   try {
-    // Has to be the first statement executed against the connection.
+    // Before the key, and before anything is written. `PRAGMA cipher_version`
+    // interrogates the library rather than the database, so it is safe ahead of
+    // the key, and asking first means a build that cannot encrypt fails against
+    // an empty file instead of filling one with plaintext.
+    await assertSQLCipher(db);
+
+    // Has to be the first statement that touches the database.
     await db.execAsync(rawKeyPragma(key));
 
     await assertReadable(db, created);
@@ -87,7 +123,7 @@ async function open(): Promise<SQLiteDatabase> {
   } catch (cause) {
     // Do not leave a half-configured handle behind for the next caller.
     await db.closeAsync().catch(() => undefined);
-    if (cause instanceof UnrecoverableJournalError) throw cause;
+    if (isDiagnosed(cause)) throw cause;
     throw new DatabaseUnavailableError('Could not open the journal database.', { cause });
   }
 
@@ -95,17 +131,28 @@ async function open(): Promise<SQLiteDatabase> {
 }
 
 /**
+ * Confirms the running binary is actually linked against SQLCipher.
+ *
+ * `PRAGMA cipher_version` returns a version string on a SQLCipher build and no
+ * row at all on stock SQLite, which makes it the only cheap way to tell the two
+ * apart - `PRAGMA key` cannot, because a plain build accepts it and ignores it.
+ */
+async function assertSQLCipher(db: SQLiteDatabase): Promise<void> {
+  const row = await db.getFirstAsync<{ cipher_version: string }>('PRAGMA cipher_version');
+  if (row?.cipher_version) return;
+
+  throw new SQLCipherUnavailableError(
+    'This build of the app has no SQLCipher, so the journal would be stored unencrypted. Run `npx expo prebuild` and start a development build - Expo Go cannot run this app.'
+  );
+}
+
+/**
  * Reads a page, so a key that does not fit this file is discovered here rather
  * than several screens away at the first real query.
  *
- * What this does not catch: on a build without SQLCipher, `PRAGMA key` is
- * silently ignored - SQLite ignores unknown pragmas - and this read succeeds
- * against a plaintext file. Detecting that needs `PRAGMA cipher_version`; see
- * issue #130.
- *
- * What it does catch, given `keyWasCreated`, is the restored-backup case. A key
- * we just minted cannot fail to read a database we just created, so if it fails
- * the file was already there and belonged to a key that is gone.
+ * Given `keyWasCreated` it also catches the restored-backup case. A key we just
+ * minted cannot fail to read a database we just created, so if it fails the
+ * file was already there and belonged to a key that is gone.
  */
 async function assertReadable(db: SQLiteDatabase, keyWasCreated: boolean): Promise<void> {
   try {
