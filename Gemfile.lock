@@ -391,7 +391,7 @@ PLATFORMS
 
 DEPENDENCIES
   bootsnap
-  brakeman
+  brakeman (~> 8)
   bundler-audit
   capybara
   debug
@@ -409,7 +409,7 @@ DEPENDENCIES
   solid_cable
   solid_cache
   solid_queue
-  sqlite3 (>= 2.1)
+  sqlite3 (>= 2.9.6)
   stimulus-rails
   thruster
   turbo-rails
