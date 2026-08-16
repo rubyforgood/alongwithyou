@@ -101,6 +101,31 @@ describeSql('createRepository', () => {
       expect(stored?.phone).toBeNull();
     });
 
+    it('returns exactly what find() reads back', async () => {
+      // The two used to disagree: an omitted field was stored as NULL and
+      // returned as absent, so a screen rendering `created` saw something the
+      // database did not contain.
+      const created = await contacts.create({
+        name: 'Sam Okafor',
+        relationship: 'Neighbour',
+      } as Contact);
+
+      await expect(contacts.find(created.id)).resolves.toEqual(created);
+    });
+
+    it('does not hand back keys that were never columns', async () => {
+      // Undeclared keys are dropped on insert, so echoing them makes the return
+      // value look like a saved record when it is not.
+      const created = await contacts.create({
+        name: 'Sam',
+        relationship: 'Friend',
+        phone: null,
+        nickname: 'Sammy',
+      } as never);
+
+      expect(created).not.toHaveProperty('nickname');
+    });
+
     it('treats SQL in a value as text, not as SQL', async () => {
       const created = await contacts.create({
         name: "Robert'); DROP TABLE contacts;--",
@@ -188,6 +213,25 @@ describeSql('createRepository', () => {
 
     it('throws for an id that is not there', async () => {
       await expect(contacts.update('nope', { name: 'X' })).rejects.toThrow(RepositoryError);
+    });
+
+    it('still works when pulled off the repository', async () => {
+      // `const { update } = repo` and `onPress={repo.update}` are both ordinary
+      // React. While update reached its sibling through `this`, both threw
+      // TypeError at runtime, and TypeScript had nothing to say about it.
+      const created = await contacts.create({ name: 'Alex', relationship: 'Sister', phone: null });
+      const { update } = contacts;
+
+      await expect(update(created.id, { name: 'Alexis' })).resolves.toMatchObject({
+        name: 'Alexis',
+      });
+    });
+
+    it('still works detached on the no-op path, which reads a row back too', async () => {
+      const created = await contacts.create({ name: 'Alex', relationship: 'Sister', phone: null });
+      const { update } = contacts;
+
+      await expect(update(created.id, {})).resolves.toMatchObject({ name: 'Alex' });
     });
   });
 
