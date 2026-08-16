@@ -47,9 +47,26 @@ const KEYCHAIN_ENTRY = 'journal.database.key';
  * loss, this is the better side of the trade - but it is a product decision as
  * much as a technical one and it deserves a signed-off ADR of its own.
  *
- * THIS_DEVICE_ONLY additionally keeps the key out of iCloud/Google backups, so
- * a restored backup on a new phone cannot decrypt a copied database file. That
- * is the same boundary 0003 draws and what issue #115 asks for.
+ * THIS_DEVICE_ONLY keeps the key out of iCloud backups, so a restored backup on
+ * a new phone cannot decrypt a copied database file. That is the same boundary
+ * 0003 draws and what issue #115 asks for. Note that database.ts has to handle
+ * the other side of that: the file does come back from a backup, so a restored
+ * phone finds a journal it cannot read and has to say so rather than mint a new
+ * key over it.
+ *
+ * This option is iOS-only - `keychainAccessible` is @platform ios in
+ * expo-secure-store, so it does nothing on Android. The Android equivalent
+ * comes from the expo-secure-store config plugin, whose backup rules exclude
+ * the SecureStore shared preferences from Auto Backup. That makes the bare
+ * "expo-secure-store" entry in app.json load-bearing rather than registration.
+ *
+ * WHEN_PASSCODE_SET_THIS_DEVICE_ONLY is the upgrade that looks free and is not.
+ * It is stronger, and unlike requireAuthentication it does not bind to
+ * biometric enrollment - but expo documents it as "the user must have set a
+ * passcode in order to store an entry. If the user removes their passcode, the
+ * entry will be deleted." It therefore cannot store a key at all on the devices
+ * 0018 is about, and it turns removing a passcode into a data-loss event: the
+ * same catastrophe as the fingerprint case, with a rarer trigger.
  */
 const KEYCHAIN_OPTIONS: SecureStore.SecureStoreOptions = {
   keychainAccessible: SecureStore.WHEN_UNLOCKED_THIS_DEVICE_ONLY,
@@ -67,13 +84,30 @@ function toHex(bytes: Uint8Array): string {
   return Array.from(bytes, (b) => b.toString(16).padStart(2, '0')).join('');
 }
 
+export type DatabaseKey = {
+  /** Raw key as hex, not a passphrase - see `rawKeyPragma`. */
+  readonly key: string;
+  /**
+   * True when this call minted the key rather than reading a stored one.
+   *
+   * The caller needs this, and the reason is worth stating. `getItemAsync`
+   * resolves to null "if there is no entry for the given key **or if the key
+   * has been invalidated**" - expo's own wording. One value, two very different
+   * situations, and only one of them is a first run. Nothing at this level can
+   * tell them apart, because that takes knowing whether a database file already
+   * exists; database.ts can, by trying to decrypt it. So this flag hands the
+   * question up rather than guessing here.
+   */
+  readonly created: boolean;
+};
+
 /**
  * Returns the database key, generating and storing one the first time.
  *
  * The hex string this returns is a raw key, not a passphrase - see
  * `rawKeyPragma` for why that distinction matters at the PRAGMA.
  */
-export async function getOrCreateDatabaseKey(): Promise<string> {
+export async function getOrCreateDatabaseKey(): Promise<DatabaseKey> {
   let existing: string | null;
   try {
     existing = await SecureStore.getItemAsync(KEYCHAIN_ENTRY, KEYCHAIN_OPTIONS);
@@ -88,7 +122,7 @@ export async function getOrCreateDatabaseKey(): Promise<string> {
     });
   }
 
-  if (existing) return existing;
+  if (existing) return { key: existing, created: false };
 
   const key = toHex(await Crypto.getRandomBytesAsync(KEY_BYTES));
 
@@ -100,7 +134,7 @@ export async function getOrCreateDatabaseKey(): Promise<string> {
     });
   }
 
-  return key;
+  return { key, created: true };
 }
 
 /**
