@@ -6,6 +6,7 @@ import {
   DatabaseUnavailableError,
   destroyJournalDatabase,
   getJournalDatabase,
+  UnrecoverableJournalError,
 } from './database';
 import { deleteDatabaseKey, getOrCreateDatabaseKey } from './key';
 import { migrate } from './migrations';
@@ -57,9 +58,13 @@ beforeEach(async () => {
   setPlatform('ios');
   db = fakeDatabase();
   openDatabaseAsync.mockResolvedValue(db);
-  getKey.mockResolvedValue(KEY);
+  getKey.mockResolvedValue({ key: KEY, created: false });
   migrateMock.mockResolvedValue(0);
   deleteDatabaseAsync.mockResolvedValue(undefined);
+  // Has to resolve, not return undefined: the code under test chains .catch()
+  // onto it, and a bare jest.fn() would throw a TypeError that swallows the
+  // error the caller was actually meant to see.
+  deleteKey.mockResolvedValue(undefined);
 });
 
 afterEach(async () => {
@@ -121,6 +126,59 @@ describe('getJournalDatabase', () => {
     getKey.mockRejectedValue(new Error('keychain locked'));
     await expect(getJournalDatabase()).rejects.toThrow();
     expect(openDatabaseAsync).not.toHaveBeenCalled();
+  });
+});
+
+describe('a journal that no key can open', () => {
+  /** A key we just minted cannot fail against a file we just created. */
+  function restoredFromAnotherPhone() {
+    getKey.mockResolvedValue({ key: KEY, created: true });
+    db.getFirstAsync.mockRejectedValue(new Error('file is not a database'));
+  }
+
+  it('is reported as its own error rather than a generic open failure', async () => {
+    // Restoring a backup onto a new phone brings journal.db back but not the
+    // key, which 0015 keeps THIS_DEVICE_ONLY on purpose. Saying "could not open
+    // the database" there is true and useless; this is the case that has to be
+    // nameable so something can eventually offer to start over.
+    restoredFromAnotherPhone();
+
+    await expect(getJournalDatabase()).rejects.toThrow(UnrecoverableJournalError);
+  });
+
+  it('takes the useless key back out, so the next launch reaches the same branch', async () => {
+    // Leaving it stored would make created=false next time, and the diagnosis
+    // would degrade to a generic failure that explains nothing.
+    restoredFromAnotherPhone();
+
+    await expect(getJournalDatabase()).rejects.toThrow(UnrecoverableJournalError);
+    expect(deleteKey).toHaveBeenCalled();
+  });
+
+  it('closes the handle it could not read', async () => {
+    restoredFromAnotherPhone();
+
+    await expect(getJournalDatabase()).rejects.toThrow(UnrecoverableJournalError);
+    expect(db.closeAsync).toHaveBeenCalled();
+  });
+
+  it('does not blame a stored key for a decrypt failure, or delete it', async () => {
+    // Same symptom, different cause: the key was already there, so this is
+    // corruption or something else - not a journal from another phone. Deleting
+    // the key here would destroy a database that might still be readable.
+    getKey.mockResolvedValue({ key: KEY, created: false });
+    db.getFirstAsync.mockRejectedValue(new Error('file is not a database'));
+
+    await expect(getJournalDatabase()).rejects.toThrow(DatabaseUnavailableError);
+    expect(deleteKey).not.toHaveBeenCalled();
+  });
+
+  it('leaves a genuine first run alone', async () => {
+    // Fresh install: key minted, empty file, decrypt fine. Nothing to report.
+    getKey.mockResolvedValue({ key: KEY, created: true });
+
+    await expect(getJournalDatabase()).resolves.toBeDefined();
+    expect(deleteKey).not.toHaveBeenCalled();
   });
 });
 

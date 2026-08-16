@@ -26,6 +26,32 @@ export class DatabaseUnavailableError extends Error {
 }
 
 /**
+ * There is a journal on this device and no key that opens it. The data is gone.
+ *
+ * The path here is not exotic - it is the ordinary one. 0015 stores the key
+ * WHEN_UNLOCKED_THIS_DEVICE_ONLY precisely so it does *not* travel in an iCloud
+ * backup, but `journal.db` lives in Documents and does. So restoring a backup
+ * onto a new phone - which is what people do when they replace a handset -
+ * brings back the file without the key.
+ *
+ * Treating that as a first run and minting a fresh key is the worst available
+ * response: every read then fails, and the app is bricked on every launch after
+ * with a message that explains nothing. So it is called out as its own error.
+ * The journal genuinely cannot be recovered - 0007 commits to telling people
+ * that during onboarding - but "your journal was made on a different phone and
+ * cannot be opened here" is a true thing to say, and it leaves the user
+ * somewhere to go. `destroyJournalDatabase` is the way to start over.
+ *
+ * The UI for that is not built; this is the mechanism it needs.
+ */
+export class UnrecoverableJournalError extends Error {
+  constructor(message: string, options?: { cause?: unknown }) {
+    super(message, options);
+    this.name = 'UnrecoverableJournalError';
+  }
+}
+
+/**
  * Cached as the in-flight promise, not the resolved handle, so that two screens
  * mounting at once share one open rather than racing to create two. Cleared on
  * failure so a retry is not permanently poisoned by one bad open.
@@ -45,17 +71,14 @@ async function open(): Promise<SQLiteDatabase> {
     );
   }
 
-  const key = await getOrCreateDatabaseKey();
+  const { key, created } = await getOrCreateDatabaseKey();
   const db = await SQLite.openDatabaseAsync(DATABASE_NAME);
 
   try {
     // Has to be the first statement executed against the connection.
     await db.execAsync(rawKeyPragma(key));
 
-    // Touch the schema to force SQLCipher to actually decrypt a page. Without
-    // this, a wrong key is not discovered until the first real query, which
-    // could be several screens away from the thing that caused it.
-    await db.getFirstAsync('SELECT count(*) FROM sqlite_master');
+    await assertReadable(db, created);
 
     await db.execAsync('PRAGMA journal_mode = WAL');
     await db.execAsync('PRAGMA foreign_keys = ON');
@@ -64,10 +87,43 @@ async function open(): Promise<SQLiteDatabase> {
   } catch (cause) {
     // Do not leave a half-configured handle behind for the next caller.
     await db.closeAsync().catch(() => undefined);
+    if (cause instanceof UnrecoverableJournalError) throw cause;
     throw new DatabaseUnavailableError('Could not open the journal database.', { cause });
   }
 
   return db;
+}
+
+/**
+ * Reads a page, so a key that does not fit this file is discovered here rather
+ * than several screens away at the first real query.
+ *
+ * What this does not catch: on a build without SQLCipher, `PRAGMA key` is
+ * silently ignored - SQLite ignores unknown pragmas - and this read succeeds
+ * against a plaintext file. Detecting that needs `PRAGMA cipher_version`; see
+ * issue #130.
+ *
+ * What it does catch, given `keyWasCreated`, is the restored-backup case. A key
+ * we just minted cannot fail to read a database we just created, so if it fails
+ * the file was already there and belonged to a key that is gone.
+ */
+async function assertReadable(db: SQLiteDatabase, keyWasCreated: boolean): Promise<void> {
+  try {
+    await db.getFirstAsync('SELECT count(*) FROM sqlite_master');
+  } catch (cause) {
+    if (!keyWasCreated) throw cause;
+
+    // Take the useless key back out. Leaving it would turn a diagnosable state
+    // into an undiagnosable one: the next launch would read a stored key, and
+    // this branch - the only thing that knows what actually happened - would
+    // never run again.
+    await deleteDatabaseKey().catch(() => undefined);
+
+    throw new UnrecoverableJournalError(
+      'There is a journal on this device that no key can open. It was almost certainly restored from a backup of another phone, which does not carry the key. The journal cannot be recovered; starting a new one means erasing it.',
+      { cause }
+    );
+  }
 }
 
 /** The shared database handle, opening and migrating it on first call. */

@@ -37,7 +37,7 @@ describe('getOrCreateDatabaseKey', () => {
   it('generates, stores and returns a key the first time', async () => {
     getItemAsync.mockResolvedValue(null);
 
-    await expect(getOrCreateDatabaseKey()).resolves.toBe(HEX);
+    await expect(getOrCreateDatabaseKey()).resolves.toEqual({ key: HEX, created: true });
 
     expect(getRandomBytesAsync).toHaveBeenCalledWith(32);
     expect(setItemAsync).toHaveBeenCalledWith('journal.database.key', HEX, expect.any(Object));
@@ -46,10 +46,21 @@ describe('getOrCreateDatabaseKey', () => {
   it('returns the stored key without generating a new one', async () => {
     getItemAsync.mockResolvedValue(HEX);
 
-    await expect(getOrCreateDatabaseKey()).resolves.toBe(HEX);
+    await expect(getOrCreateDatabaseKey()).resolves.toEqual({ key: HEX, created: false });
 
     expect(getRandomBytesAsync).not.toHaveBeenCalled();
     expect(setItemAsync).not.toHaveBeenCalled();
+  });
+
+  it('reports whether it minted the key, because null is ambiguous', async () => {
+    // SecureStore returns null both for "nothing stored yet" and for "the entry
+    // was invalidated". Only database.ts can tell those apart - by finding out
+    // whether the key opens the file - so this flag has to reach it.
+    getItemAsync.mockResolvedValue(null);
+    await expect(getOrCreateDatabaseKey()).resolves.toMatchObject({ created: true });
+
+    getItemAsync.mockResolvedValue(HEX);
+    await expect(getOrCreateDatabaseKey()).resolves.toMatchObject({ created: false });
   });
 
   it('stores the key without requireAuthentication, and device-only', async () => {

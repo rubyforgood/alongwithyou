@@ -16,6 +16,7 @@ import { ActivityIndicator, AppState, Platform, View } from 'react-native';
 import { Button } from '@/components/ui/button';
 import { Text } from '@/components/ui/text';
 import { checkUnlockAvailability, requestUnlock } from '@/lib/auth/unlock';
+import { closeJournalDatabase } from '@/lib/db/database';
 
 type GateState =
   | { status: 'checking' }
@@ -105,6 +106,18 @@ export function UnlockGate({ children, skip = false }: UnlockGateProps) {
     const subscription = AppState.addEventListener('change', (next) => {
       if (next === 'background') {
         setState({ status: 'locked', message: null });
+
+        // Close the database too, not just the view. The gate is the only thing
+        // that knows the app is meant to be locked, and locking only the UI
+        // leaves db/database.ts holding a decrypted handle and the key in memory
+        // for the life of the process - at which point 0015's
+        // WHEN_UNLOCKED_THIS_DEVICE_ONLY is a property of the first launch and
+        // nothing after it, because the keychain is never asked again. Dropping
+        // the handle here is what makes that option mean something.
+        //
+        // Failures are swallowed on purpose: this runs on the way out of the
+        // foreground, there is nobody to tell, and the next unlock re-opens.
+        void closeJournalDatabase().catch(() => undefined);
       }
     });
 

@@ -3,14 +3,23 @@ import { AppState, Platform, Text as RNText } from 'react-native';
 
 import { UnlockGate } from './unlock-gate';
 import { checkUnlockAvailability, requestUnlock } from '@/lib/auth/unlock';
+import { closeJournalDatabase } from '@/lib/db/database';
 
 jest.mock('@/lib/auth/unlock', () => ({
   checkUnlockAvailability: jest.fn(),
   requestUnlock: jest.fn(),
 }));
 
+// The gate closes the database when it re-locks. Mocked rather than exercised:
+// the real one needs expo-sqlite and a device, and what matters here is only
+// that the gate asks.
+jest.mock('@/lib/db/database', () => ({
+  closeJournalDatabase: jest.fn(async () => undefined),
+}));
+
 const availability = checkUnlockAvailability as jest.Mock;
 const unlock = requestUnlock as jest.Mock;
+const closeDatabase = closeJournalDatabase as jest.Mock;
 
 const originalOS = Platform.OS;
 function setPlatform(os: typeof Platform.OS) {
@@ -148,7 +157,24 @@ describe('UnlockGate', () => {
     await waitFor(() => expect(screen.queryByText('Journal contents')).toBeNull());
     expect(screen.getByText('Your journal is locked')).toBeVisible();
 
+    // Locking the view is only half of it. While the handle stays open the key
+    // is still in memory and any caller can still read, which makes 0015's
+    // WHEN_UNLOCKED_THIS_DEVICE_ONLY a first-launch property and nothing more.
+    expect(closeDatabase).toHaveBeenCalled();
+
     jest.restoreAllMocks();
+  });
+
+  it('does not close a database the web build never opened', async () => {
+    setPlatform('web');
+
+    await render(
+      <UnlockGate>
+        <Journal />
+      </UnlockGate>
+    );
+
+    expect(closeDatabase).not.toHaveBeenCalled();
   });
 
   it('does not gate the web build, which holds no journal data', async () => {
