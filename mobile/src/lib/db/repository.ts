@@ -104,36 +104,58 @@ export function createRepository<TFields extends FieldSet>(
   // millisecond keep a stable order between renders instead of swapping around.
   const ordering = 'ORDER BY created_at ASC, id ASC';
 
+  // A plain function rather than a method, deliberately. `update` needs to read
+  // a row back, and reaching a sibling through `this` breaks the moment anyone
+  // writes `const { update } = repo` or passes `repo.update` as a callback -
+  // both ordinary in React, neither caught by TypeScript, and the failure is a
+  // TypeError at runtime.
+  async function find(id: string): Promise<Entry<TFields> | null> {
+    const db = await getDatabase();
+    const row = await db.getFirstAsync<Entry<TFields>>(
+      `SELECT ${selection} FROM ${table} WHERE id = ?`,
+      id
+    );
+    return row ?? null;
+  }
+
+  /**
+   * The declared fields, and only those, with anything the caller left out
+   * turned into the NULL that will actually be stored.
+   *
+   * This is what `create` returns rather than the caller's own object, so that
+   * the entry it hands back matches the row `find` reads. Spreading the input
+   * instead lets an omitted field come back as `undefined` while the database
+   * holds `null`, and lets keys that were never columns travel onwards as
+   * though they had been saved.
+   */
+  function normalise(values: Partial<TFields>): TFields {
+    return Object.fromEntries(fields.map((field) => [field, values[field] ?? null])) as TFields;
+  }
+
   return {
     async list() {
       const db = await getDatabase();
       return db.getAllAsync<Entry<TFields>>(`SELECT ${selection} FROM ${table} ${ordering}`);
     },
 
-    async find(id) {
-      const db = await getDatabase();
-      const row = await db.getFirstAsync<Entry<TFields>>(
-        `SELECT ${selection} FROM ${table} WHERE id = ?`,
-        id
-      );
-      return row ?? null;
-    },
+    find,
 
     async create(values) {
       const db = await getDatabase();
       const id = Crypto.randomUUID();
       const now = new Date().toISOString();
+      const stored = normalise(values);
 
       const columns = ['id', 'created_at', 'updated_at', ...fields];
       const placeholders = columns.map(() => '?').join(', ');
-      const bound = [id, now, now, ...fields.map((field) => values[field] ?? null)];
+      const bound = [id, now, now, ...fields.map((field) => stored[field])];
 
       await db.runAsync(
         `INSERT INTO ${table} (${columns.join(', ')}) VALUES (${placeholders})`,
-        bound
+        bound as FieldValue[]
       );
 
-      return { ...values, id, createdAt: now, updatedAt: now };
+      return { ...stored, id, createdAt: now, updatedAt: now };
     },
 
     async update(id, changes) {
@@ -143,7 +165,7 @@ export function createRepository<TFields extends FieldSet>(
       if (changed.length === 0) {
         // Nothing to write. Returning the row as-is beats touching updatedAt
         // for an edit that changed nothing.
-        const current = await this.find(id);
+        const current = await find(id);
         if (!current) throw new RepositoryError(`No ${table} entry with id ${id}.`);
         return current;
       }
@@ -161,7 +183,7 @@ export function createRepository<TFields extends FieldSet>(
         throw new RepositoryError(`No ${table} entry with id ${id}.`);
       }
 
-      const updated = await this.find(id);
+      const updated = await find(id);
       if (!updated) throw new RepositoryError(`No ${table} entry with id ${id}.`);
       return updated;
     },
