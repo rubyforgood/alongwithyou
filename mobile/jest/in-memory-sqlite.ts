@@ -10,17 +10,28 @@
 // cannot tell you is anything about SQLCipher, which has no Node build and
 // needs a device. Encryption is verified on hardware (issue #101), not here.
 
-import { DatabaseSync } from 'node:sqlite';
+import type { DatabaseSync } from 'node:sqlite';
 import type { SQLiteDatabase } from 'expo-sqlite';
 
-/** True when the running Node has node:sqlite (22.5+). */
-export const HAS_NODE_SQLITE = (() => {
+/**
+ * node:sqlite's `DatabaseSync`, or null on a Node that does not have it.
+ *
+ * The require is lazy on purpose. A static `import { DatabaseSync } from
+ * 'node:sqlite'` is resolved before any code in this module runs, so on Node
+ * below 22.5 the module throws at import time and no guard written here can
+ * catch it - the dependent suites then error out instead of skipping. That is
+ * issue #133, and `engines` currently permits 20.19.4.
+ */
+const DatabaseSyncClass: typeof DatabaseSync | null = (() => {
   try {
-    return typeof DatabaseSync === 'function';
+    return (require('node:sqlite') as typeof import('node:sqlite')).DatabaseSync;
   } catch {
-    return false;
+    return null;
   }
 })();
+
+/** True when the running Node has node:sqlite (22.5+). */
+export const HAS_NODE_SQLITE = DatabaseSyncClass !== null;
 
 /**
  * expo-sqlite accepts either `run(sql, a, b)` or `run(sql, [a, b])`, and this
@@ -34,7 +45,13 @@ function normaliseParams(params: unknown[]): unknown[] {
 export type InMemoryDatabase = SQLiteDatabase & { readonly raw: DatabaseSync };
 
 export function createInMemoryDatabase(): InMemoryDatabase {
-  const raw = new DatabaseSync(':memory:');
+  if (!DatabaseSyncClass) {
+    throw new Error(
+      'node:sqlite is unavailable - this helper needs Node 22.5 or newer. Guard the suite with HAS_NODE_SQLITE.'
+    );
+  }
+
+  const raw = new DatabaseSyncClass(':memory:');
 
   const db = {
     raw,
