@@ -208,8 +208,10 @@ describe('destroyJournalDatabase', () => {
     await getJournalDatabase();
     await destroyJournalDatabase();
 
-    // Interrupted between the two, this order leaves an unreadable file rather
-    // than a readable one whose key is gone.
+    // Interrupted between the two, this order leaves a key with nothing to
+    // open, and the next launch is an ordinary first run. The reverse would
+    // leave a file no key can open - UnrecoverableJournalError, which is the
+    // state this whole control exists to get out of.
     expect(order).toEqual(['file', 'key']);
     expect(db.closeAsync).toHaveBeenCalled();
   });
