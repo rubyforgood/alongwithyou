@@ -10,7 +10,7 @@
     "@rn-primitives/avatar": "^1.5.2",
     "@rn-primitives/checkbox": "^1.5.2",
     "@rn-primitives/label": "^1.5.2",
-    "@rn-primitives/portal": "^1.5.2",
+    "@rn-primitives/portal": "^1.5.3",
     "@rn-primitives/progress": "^1.5.2",
     "@rn-primitives/separator": "^1.5.2",
     "@rn-primitives/slot": "^1.5.2",
