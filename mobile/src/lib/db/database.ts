@@ -149,10 +149,18 @@ export async function closeJournalDatabase(): Promise<void> {
  * Erases the journal: the database file first, then the key.
  *
  * This is the mechanism behind the "Delete all my data" control 0007 requires
- * and issue #116 tracks. File before key, so that an interruption between the
- * two leaves an unreadable database rather than a readable one with no key -
- * either way there is nothing recoverable, but only one of those orders is
- * still true to the promise if the process dies half-way.
+ * and issue #116 tracks. The order matters only if the process dies between the
+ * two steps, but it decides what the user finds when it does.
+ *
+ * File first leaves a key with nothing to open, and the next launch reads that
+ * key and creates an empty journal - a clean start, which is what was asked
+ * for. Key first would leave a file no key can open: `UnrecoverableJournalError`
+ * above, reached by exactly the path this is meant to be the escape from. A
+ * half-finished delete would be indistinguishable from a journal restored off
+ * someone else's phone, and the app would say so instead of starting over.
+ *
+ * Both orders destroy the data. Only one of them leaves the app somewhere the
+ * user can go.
  */
 export async function destroyJournalDatabase(): Promise<void> {
   await closeJournalDatabase();

@@ -7,6 +7,15 @@
 // CI runs 22.x, so nothing here would notice a regression. Making the require
 // throw is the only way to test the old-Node path from a new Node.
 
+import { HAS_NODE_SQLITE } from './in-memory-sqlite';
+
+// The other direction is not fakeable: no amount of mocking gives Node 20 a
+// working node:sqlite, so the suite that exercises the real one skips exactly
+// where the suites it guards do - see migrations.test.ts and repository.test.ts.
+// Without this the fix for #133 would fail its own regression test on the Node
+// versions #133 is about.
+const describeSql = HAS_NODE_SQLITE ? describe : describe.skip;
+
 // doMock registrations live for the whole file, so each test states which world
 // it wants rather than inheriting the previous one's.
 beforeEach(() => {
@@ -39,7 +48,7 @@ describe('on a Node without node:sqlite', () => {
   });
 });
 
-describe('on a Node that has it', () => {
+describeSql('on a Node that has it', () => {
   it('reports the feature as present and builds a working database', async () => {
     const { HAS_NODE_SQLITE, createInMemoryDatabase } = require('./in-memory-sqlite');
 
