@@ -11,9 +11,34 @@ import {
 import { deleteDatabaseKey, getOrCreateDatabaseKey } from './key';
 import { migrate } from './migrations';
 
+/**
+ * The fake disk, keyed by URI. Jest hoists the factory below above the file, so
+ * anything it closes over has to be `mock`-prefixed for the transform to allow
+ * it.
+ */
+let mockFiles = new Set<string>();
+
 jest.mock('expo-sqlite', () => ({
   openDatabaseAsync: jest.fn(),
   deleteDatabaseAsync: jest.fn(),
+  defaultDatabaseDirectory: '/documents/SQLite',
+}));
+
+// expo-file-system's File is a class, so the stand-in has to be constructible.
+// Only `exists` and `delete` are used here.
+jest.mock('expo-file-system', () => ({
+  File: class {
+    readonly uri: string;
+    constructor(directory: string, name: string) {
+      this.uri = `${directory}/${name}`;
+    }
+    get exists() {
+      return mockFiles.has(this.uri);
+    }
+    delete() {
+      if (!mockFiles.delete(this.uri)) throw new Error(`No such file: ${this.uri}`);
+    }
+  },
 }));
 jest.mock('./key', () => ({
   getOrCreateDatabaseKey: jest.fn(),
@@ -29,6 +54,10 @@ const deleteKey = deleteDatabaseKey as jest.Mock;
 const migrateMock = migrate as jest.Mock;
 
 const KEY = 'a'.repeat(64);
+
+const DB_URI = 'file:///documents/SQLite/journal.db';
+const WAL_URI = `${DB_URI}-wal`;
+const SHM_URI = `${DB_URI}-shm`;
 
 const originalOS = Platform.OS;
 function setPlatform(os: typeof Platform.OS) {
@@ -60,7 +89,12 @@ beforeEach(async () => {
   openDatabaseAsync.mockResolvedValue(db);
   getKey.mockResolvedValue({ key: KEY, created: false });
   migrateMock.mockResolvedValue(0);
-  deleteDatabaseAsync.mockResolvedValue(undefined);
+  // A journal on disk with no leftover sidecars, which is what a clean close
+  // leaves. Tests that care about the unclean case add them.
+  mockFiles = new Set([DB_URI]);
+  deleteDatabaseAsync.mockImplementation(async () => {
+    mockFiles.delete(DB_URI);
+  });
   // Has to resolve, not return undefined: the code under test chains .catch()
   // onto it, and a bare jest.fn() would throw a TypeError that swallows the
   // error the caller was actually meant to see.
@@ -216,10 +250,44 @@ describe('destroyJournalDatabase', () => {
     expect(db.closeAsync).toHaveBeenCalled();
   });
 
-  it('still removes the key when the file was already gone', async () => {
-    deleteDatabaseAsync.mockRejectedValue(new Error('no such file'));
+  it('still removes the key when there was nothing on disk to remove', async () => {
+    mockFiles.clear();
 
     await expect(destroyJournalDatabase()).resolves.toBeUndefined();
+    // Nothing to delete, so nothing is asked to. "Already gone" is established
+    // by looking rather than by catching, because deleteDatabaseAsync gives
+    // that case the same error code as a delete that genuinely failed.
+    expect(deleteDatabaseAsync).not.toHaveBeenCalled();
     expect(deleteKey).toHaveBeenCalled();
+  });
+
+  it('removes the WAL sidecars, which deleteDatabaseAsync leaves behind', async () => {
+    mockFiles.add(WAL_URI);
+    mockFiles.add(SHM_URI);
+
+    await destroyJournalDatabase();
+
+    expect(mockFiles.has(WAL_URI)).toBe(false);
+    expect(mockFiles.has(SHM_URI)).toBe(false);
+  });
+
+  it('removes them even when the database file itself is already gone', async () => {
+    // The state an unclean shutdown leaves: journal.db deleted or never
+    // reopened, a -wal still holding entries under the key about to be deleted.
+    mockFiles = new Set([WAL_URI, SHM_URI]);
+
+    await destroyJournalDatabase();
+
+    expect(mockFiles.size).toBe(0);
+  });
+
+  it('keeps the key when the journal could not be deleted', async () => {
+    // Reporting success here and deleting the key anyway is issue #135: it
+    // leaves a file no key can open, which is UnrecoverableJournalError -
+    // exactly the state this control is meant to be the escape from.
+    deleteDatabaseAsync.mockRejectedValue(new Error('currently open'));
+
+    await expect(destroyJournalDatabase()).rejects.toThrow(/currently open/);
+    expect(deleteKey).not.toHaveBeenCalled();
   });
 });

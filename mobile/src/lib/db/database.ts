@@ -9,6 +9,7 @@
 // client. That is a real change to how you run the app locally, and it is the
 // price of the database being encrypted at all.
 
+import { File } from 'expo-file-system';
 import * as SQLite from 'expo-sqlite';
 import type { SQLiteDatabase } from 'expo-sqlite';
 import { Platform } from 'react-native';
@@ -17,6 +18,20 @@ import { migrate } from './migrations';
 import { deleteDatabaseKey, getOrCreateDatabaseKey, rawKeyPragma } from './key';
 
 const DATABASE_NAME = 'journal.db';
+
+/**
+ * What WAL mode leaves beside the database, and `deleteDatabaseAsync` does not
+ * remove - it deletes only the file it is named after, a single `removeItem` on
+ * iOS and `File.delete()` on Android.
+ *
+ * A clean close checkpoints these and removes them, so they survive exactly
+ * when the last close was not clean: a crash, or a force-quit, which is how
+ * most people close a phone app. Left behind they hold journal pages that
+ * "Delete all my data" is supposed to have erased, and the next launch creates
+ * a fresh `journal.db` beside a WAL encrypted under a key that no longer
+ * exists.
+ */
+const SIDECAR_SUFFIXES = ['-wal', '-shm'] as const;
 
 export class DatabaseUnavailableError extends Error {
   constructor(message: string, options?: { cause?: unknown }) {
@@ -146,13 +161,55 @@ export async function closeJournalDatabase(): Promise<void> {
 }
 
 /**
- * Erases the journal: the database file first, then the key.
+ * A file in expo-sqlite's directory, in the form `File` needs.
+ *
+ * `defaultDatabaseDirectory` is a bare filesystem path on both platforms - iOS
+ * builds it from `documentDirectory...standardized.path`, Android from
+ * `filesDir.canonicalPath`. iOS's URL conversion accepts a bare path, but
+ * Android resolves it through `java.io.File(URI.create(...))`, which rejects a
+ * URI with no scheme, so the scheme is added here rather than left to whichever
+ * platform happens to tolerate its absence.
+ */
+function databaseFile(name: string): File {
+  const directory: string = SQLite.defaultDatabaseDirectory;
+  return new File(`file://${directory}`, name);
+}
+
+/**
+ * Removes the database and everything beside it, and throws if anything is
+ * left. `destroyJournalDatabase` deletes the key only once this has returned,
+ * which is the whole point of it throwing - see the ordering note there.
+ *
+ * "Already gone" is the one acceptable failure, and it is settled by looking
+ * rather than by catching, because a catch cannot tell it from the others:
+ * `DatabaseNotFoundException`, `DeleteDatabaseException` (something still holds
+ * the database open) and `DeleteDatabaseFileException` all carry the same
+ * `E_SQLITE_DELETE_DATABASE` code. Swallowing all three reports success while
+ * leaving the journal on disk, which is issue #135.
+ */
+async function deleteDatabaseFiles(): Promise<void> {
+  // deleteDatabaseAsync rather than File.delete for the database itself: it
+  // refuses to remove one that still has an open connection, and that check is
+  // worth keeping.
+  if (databaseFile(DATABASE_NAME).exists) {
+    await SQLite.deleteDatabaseAsync(DATABASE_NAME);
+  }
+
+  for (const suffix of SIDECAR_SUFFIXES) {
+    const sidecar = databaseFile(`${DATABASE_NAME}${suffix}`);
+    if (sidecar.exists) sidecar.delete();
+  }
+}
+
+/**
+ * Erases the journal: the files first, then the key.
  *
  * This is the mechanism behind the "Delete all my data" control 0007 requires
- * and issue #116 tracks. The order matters only if the process dies between the
- * two steps, but it decides what the user finds when it does.
+ * and issue #116 tracks. The order matters whenever the two steps do not both
+ * complete - because the first one threw, or because the process died in
+ * between - and it decides what the user finds when that happens.
  *
- * File first leaves a key with nothing to open, and the next launch reads that
+ * Files first leave a key with nothing to open, and the next launch reads that
  * key and creates an empty journal - a clean start, which is what was asked
  * for. Key first would leave a file no key can open: `UnrecoverableJournalError`
  * above, reached by exactly the path this is meant to be the escape from. A
@@ -160,10 +217,12 @@ export async function closeJournalDatabase(): Promise<void> {
  * someone else's phone, and the app would say so instead of starting over.
  *
  * Both orders destroy the data. Only one of them leaves the app somewhere the
- * user can go.
+ * user can go - which is also why `deleteDatabaseFiles` throws rather than
+ * reporting a success it cannot verify. A file still on disk when the key goes
+ * is the key-first state by another route.
  */
 export async function destroyJournalDatabase(): Promise<void> {
   await closeJournalDatabase();
-  await SQLite.deleteDatabaseAsync(DATABASE_NAME).catch(() => undefined);
+  await deleteDatabaseFiles();
   await deleteDatabaseKey();
 }
