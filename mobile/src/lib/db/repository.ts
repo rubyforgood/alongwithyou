@@ -67,8 +67,21 @@ function checkIdentifier(kind: string, name: string): string {
   return name;
 }
 
-/** Column names that this module owns; a feature cannot redeclare them. */
-const RESERVED = new Set(['id', 'created_at', 'updated_at']);
+/**
+ * Column names that this module owns; a feature cannot redeclare them.
+ *
+ * Both spellings of each, because both reach a result row: the stored
+ * `created_at` and the `createdAt` that `selection` aliases it to. Without the
+ * camelCase half, a feature could declare a field called `createdAt`, and the
+ * SELECT would then ask for `created_at AS createdAt, ..., createdAt` - two
+ * output columns with one name. SQLite answers with the last, so the entry's
+ * `createdAt` would silently be the feature's column and the real timestamp
+ * would be gone, with no error anywhere.
+ *
+ * Compared lowercased, because SQLite's column names are case-insensitive and
+ * `ID` would collide with the managed `id` in the CREATE TABLE regardless.
+ */
+const RESERVED = new Set(['id', 'created_at', 'updated_at', 'createdat', 'updatedat']);
 
 /**
  * Builds a repository for one repeatable-entry table.
@@ -88,13 +101,15 @@ export function createRepository<TFields extends FieldSet>(
 
   const fields = config.fields.map((field) => {
     checkIdentifier('column', field);
-    if (RESERVED.has(field)) {
+    if (RESERVED.has(field.toLowerCase())) {
       throw new RepositoryError(
         `Column "${field}" on "${table}" is managed by the repository and cannot be declared as a field.`
       );
     }
     return field;
   });
+
+  const declared = new Set<string>(fields);
 
   const selection = ['id', 'created_at AS createdAt', 'updated_at AS updatedAt', ...fields].join(
     ', '
@@ -159,6 +174,20 @@ export function createRepository<TFields extends FieldSet>(
     },
 
     async update(id, changes) {
+      // A key that is not a column is a typo, not an instruction. Dropping it
+      // quietly lands on the no-op path below, which reads the row back and
+      // returns it - so the caller is told the edit succeeded and the value it
+      // asked to save is nowhere. Refuse the whole call instead: partially
+      // applying an update whose intent is already in doubt is worse.
+      const unknown = Object.keys(changes).filter((key) => !declared.has(key));
+      if (unknown.length > 0) {
+        throw new RepositoryError(
+          `Unknown column${unknown.length === 1 ? '' : 's'} on "${table}": ${unknown
+            .map((key) => JSON.stringify(key))
+            .join(', ')}.`
+        );
+      }
+
       const db = await getDatabase();
 
       const changed = fields.filter((field) => field in changes);

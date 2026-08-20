@@ -71,7 +71,10 @@ describe('getOrCreateDatabaseKey', () => {
     await getOrCreateDatabaseKey();
 
     const [, , options] = setItemAsync.mock.calls[0];
-    expect(options).not.toHaveProperty('requireAuthentication', true);
+    // Absence, not `!== true`. Anything truthy in that slot binds the entry to
+    // biometric enrollment just the same, and this is the one assertion 0015
+    // stakes its reputation on.
+    expect(options).not.toHaveProperty('requireAuthentication');
     expect(options.keychainAccessible).toBe(SecureStore.WHEN_UNLOCKED_THIS_DEVICE_ONLY);
   });
 
