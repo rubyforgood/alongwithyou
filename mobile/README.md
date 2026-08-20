@@ -10,26 +10,50 @@ screen, but **it is not the backend for the real patient journal** — see
 
 - Node.js 20.19.4 or newer (React Native 0.86 will not build on older versions)
 - npm
-- [Expo Go](https://expo.dev/go) on an Android or iOS device, or a simulator
+- **Xcode** for iOS, which needs macOS — or **Android Studio** with the Android
+  SDK for Android
+
+**This app no longer runs in [Expo Go](https://expo.dev/go).** The journal is
+encrypted with SQLCipher, which is a native fork of SQLite that Expo Go does not
+ship, so running the app means building it yourself.
+[`docs/decisions/0016`](../docs/decisions/0016-development-builds-required.md)
+argues the trade. Two consequences are worth knowing before you start rather
+than discovering half way through:
+
+- **The first build takes tens of minutes** and pulls down several GB of native
+  toolchain. Builds after that are quick, and day-to-day work only needs Metro.
+- **Testing on a physical iPhone now needs a Mac**, or EAS Build. Expo Go used
+  to be the way around that, and is not any more.
 
 ## Setup
 
 ```bash
 cd mobile
 npm install
-npm start
+npx expo prebuild     # generates ios/ and android/ from app.json
+npm run ios           # or: npm run android
 ```
 
-Start the Rails API too, or the app will load with a connection error:
+`ios/` and `android/` are generated rather than checked in — `npx expo prebuild`
+recreates them from `app.json`, which keeps the native configuration in one
+reviewable place. Re-run it after changing `app.json`, or after adding a
+dependency that has native code.
+
+Once the development build is installed on the simulator or device, `npm start`
+runs Metro on its own and the app picks it up, the same as it always did. You
+only need to build again when native code changes.
+
+Start the Rails API too, or the **Tasks** demo screen will load with a
+connection error. The journal itself needs no server — see
+[Talking to Rails](#talking-to-rails).
 
 ```bash
 # from the repository root, in another terminal
 bin/rails server -b 0.0.0.0
 ```
 
-Then press `i` for the iOS simulator, `a` for the Android emulator, `w` for the
-browser, or scan the QR code with Expo Go. Your computer and phone need to be on
-the same network; if local discovery fails, try a tunnel:
+Your computer and phone need to be on the same network; if local discovery
+fails, try a tunnel:
 
 ```bash
 npx expo start --tunnel
@@ -50,8 +74,16 @@ npm test
 npm run test:watch
 ```
 
-The iOS simulator requires macOS and Xcode. Expo Go still runs the app on a
-physical iPhone without a Mac.
+`npm run ios` and `npm run android` build and install the development build,
+so the first run of either is the slow one described above.
+
+The iOS simulator requires macOS and Xcode, and so now does any iOS device.
+
+`npm run web` serves the landing page only. Per
+[`docs/decisions/0017`](../docs/decisions/0017-journal-data-is-native-only.md)
+SQLCipher has no web build, so the journal deliberately refuses to open in a
+browser rather than quietly falling back to unencrypted storage. `npm run web`
+is not a preview of the app.
 
 ## Project structure
 
@@ -60,12 +92,15 @@ physical iPhone without a Mac.
 - `src/components/ui/` — the React Native Reusables components (see below)
 - `src/hooks/`, `src/constants/` — theming and colour scheme
 - `src/lib/api.ts` — typed client for the Rails API
+- `src/lib/db/` — the SQLCipher-encrypted journal: key storage, migrations, and
+  the repeatable-entry repository
+- `src/lib/auth/` — biometric unlock, applied by `src/components/unlock-gate.tsx`
 - `src/global.css`, `src/lib/theme.ts` — the design tokens `src/components/ui/` reads
 - `src/lib/utils.ts` — the `cn` class-name helper
 - `src/__tests__/` — tests for screens (see below)
 - `assets/` — icons and splash screens
 - `types/`, `nativewind-env.d.ts` — ambient declarations TypeScript cannot infer on its own
-- `jest/` — jest setup and the CSS stub
+- `jest/` — jest setup, the CSS stub, and the in-memory SQLite test double
 - `app.json` — Expo configuration
 - `babel.config.js`, `metro.config.js`, `tailwind.config.js`, `components.json` — NativeWind and the component CLI
 
@@ -200,6 +235,15 @@ Three things to know before writing more:
   inside Metro, and jest stubs the stylesheet out, so `className` arrives as a
   plain prop and `style` is never set. Assert on behaviour, roles and text; use
   `className` only where the class itself is the point.
+- **Two suites need Node 22.5 or newer.** `src/lib/db/migrations.test.ts` and
+  `src/lib/db/repository.test.ts` run against real SQLite through `node:sqlite`,
+  which older Node does not have. They *skip* rather than fail below that, so a
+  green run on Node 20 has quietly exercised about thirty fewer tests than CI
+  does. Check the skip count, or use the version CI uses.
+
+Note that nothing in the suite proves the database is actually encrypted:
+`node:sqlite` is stock SQLite with no SQLCipher, so encryption is verified on a
+device instead (issue #101). `jest/in-memory-sqlite.ts` says so at the top.
 
 ## Documentation
 
