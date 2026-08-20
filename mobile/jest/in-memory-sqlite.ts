@@ -77,15 +77,25 @@ export function createInMemoryDatabase(): InMemoryDatabase {
       return raw.prepare(sql).get(...(normaliseParams(params) as never[])) ?? null;
     },
 
-    async withExclusiveTransactionAsync(task: (txn: unknown) => Promise<void>) {
-      raw.exec('BEGIN EXCLUSIVE');
-      try {
-        await task(db);
-        raw.exec('COMMIT');
-      } catch (error) {
-        raw.exec('ROLLBACK');
-        throw error;
-      }
+    // Refuses on purpose, and this is the one method here that is worth
+    // explaining. The real withExclusiveTransactionAsync does not run the
+    // callback on the database you called it on: expo-sqlite's
+    // `Transaction.createAsync` reopens the file with `useNewConnection: true`,
+    // and `SQLiteOpenOptions` carries no key. `PRAGMA key` is per-connection,
+    // so under SQLCipher that second handle cannot read the file at all.
+    //
+    // node:sqlite has one connection and nothing to hand out as a second, so
+    // the only implementations available are "run it on this connection" and
+    // "refuse". The first is what used to be here, and it asserted the opposite
+    // of what the library does - which is precisely why migrations.ts went in
+    // using a call that would have failed on the first real device migration
+    // with every test green. Refusing keeps that failure in the suite.
+    withExclusiveTransactionAsync(): Promise<void> {
+      return Promise.reject(
+        new Error(
+          'withExclusiveTransactionAsync is deliberately not modelled: the real one runs on a new, unkeyed connection that cannot read a SQLCipher database. Use BEGIN IMMEDIATE / COMMIT on this connection instead.'
+        )
+      );
     },
 
     async closeAsync() {

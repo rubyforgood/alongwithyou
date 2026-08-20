@@ -54,14 +54,46 @@ export async function currentVersion(db: SQLiteDatabase): Promise<number> {
 }
 
 /**
+ * One migration and its `user_version` bump, all or nothing, on `db` itself.
+ *
+ * The transaction is hand-rolled rather than delegated to either of
+ * expo-sqlite's helpers. `withExclusiveTransactionAsync` is the tempting one -
+ * it is the only one that confines the transaction to the statements in its
+ * callback - but it runs them on a *different* native connection:
+ * `Transaction.createAsync` reopens the file with `useNewConnection: true`, and
+ * `SQLiteOpenOptions` has no field for a key. `PRAGMA key` is per-connection,
+ * so that second handle arrives unkeyed and a SQLCipher database answers
+ * SQLITE_NOTADB. The isolation it buys is worth nothing to us anyway: `migrate`
+ * runs inside `open()` in database.ts, before the handle is published, and the
+ * app opens exactly one connection - there is no concurrent statement to sweep
+ * in. `withTransactionAsync` does stay on this connection, but it opens with a
+ * deferred `BEGIN` and, if its own `ROLLBACK` fails, throws that instead of the
+ * error that explains what actually broke. IMMEDIATE takes the write lock up
+ * front and the cause survives.
+ */
+async function applyInTransaction(db: SQLiteDatabase, migration: Migration): Promise<void> {
+  await db.execAsync('BEGIN IMMEDIATE');
+  try {
+    await db.execAsync(migration.up);
+    // Not parameterisable - PRAGMA does not take bindings - but `id` is a
+    // number from our own list, never user input.
+    await db.execAsync(`PRAGMA user_version = ${migration.id}`);
+    await db.execAsync('COMMIT');
+  } catch (error) {
+    // Swallowed on purpose: SQLite unwinds the transaction itself for some
+    // failures, and then ROLLBACK errors too. Reporting that would bury the
+    // error that says what went wrong.
+    await db.execAsync('ROLLBACK').catch(() => undefined);
+    throw error;
+  }
+}
+
+/**
  * Applies whatever has not been applied yet, and returns the resulting version.
  *
- * Each migration runs in its own exclusive transaction together with the
- * `user_version` bump, so an interrupted upgrade leaves the database on a
- * version that matches its actual schema rather than half-way through one.
- * withExclusiveTransactionAsync rather than withTransactionAsync because only
- * the former confines the transaction to the statements in the callback - with
- * the latter, anything else running concurrently gets swept into it.
+ * Each migration runs in its own transaction together with the `user_version`
+ * bump, so an interrupted upgrade leaves the database on a version that matches
+ * its actual schema rather than half-way through one.
  */
 export async function migrate(
   db: SQLiteDatabase,
@@ -84,12 +116,7 @@ export async function migrate(
     if (migration.id <= version) continue;
 
     try {
-      await db.withExclusiveTransactionAsync(async (txn) => {
-        await txn.execAsync(migration.up);
-        // Not parameterisable - PRAGMA does not take bindings - but `id` is a
-        // number from our own list, never user input.
-        await txn.execAsync(`PRAGMA user_version = ${migration.id}`);
-      });
+      await applyInTransaction(db, migration);
     } catch (cause) {
       throw new MigrationError(
         `Migration ${migration.id} ("${migration.name}") failed. The database is still at version ${version}.`,
