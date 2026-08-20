@@ -10,6 +10,7 @@ import { useColorScheme } from 'react-native';
 
 import { AnimatedSplashOverlay } from '@/components/animated-icon';
 import AppTabs from '@/components/app-tabs';
+import { PrivacyCover } from '@/components/privacy-cover';
 import { UnlockGate } from '@/components/unlock-gate';
 import { NAV_THEME } from '@/lib/theme';
 
@@ -31,6 +32,9 @@ export default function TabLayout() {
           providers to sit on top of the rest of the tree.
           https://reactnativereusables.com/docs/installation/manual */}
       <PortalHost />
+      {/* Last of all, so that what it hides from the task switcher includes
+          anything a dialog put on top through the portal above. */}
+      <PrivacyCover />
     </ThemeProvider>
   );
 }
