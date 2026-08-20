@@ -6,42 +6,76 @@ screen, but **it is not the backend for the real patient journal** — see
 [Talking to Rails](#talking-to-rails) below and
 [`docs/decisions/0001-local-only-architecture.md`](../docs/decisions/0001-local-only-architecture.md).
 
+## This app does not run in Expo Go
+
+Worth knowing before you start, because it changes what you need installed and
+how long the first run takes.
+
+The journal database is encrypted with SQLCipher, a native fork of SQLite
+compiled into the app at build time rather than shipped with Expo Go. So running
+this project means generating the native projects and building them yourself — a
+**development build**. The first one takes tens of minutes and pulls down
+several GB of native toolchain, and needs Xcode or Android Studio. After that
+you are back to `npm start` and a reload, the same as before.
+
+"Does not run" is, if anything, an undersell. Expo Go will happily *load* this
+app and everything will appear to work — stock SQLite ignores SQLCipher's
+`PRAGMA key` rather than erroring — so the screens render, the database opens,
+and everything a user writes lands on disk **unencrypted**. Nothing crashes and
+nothing warns. Treat this app ever launching in Expo Go as a bug in itself.
+(`src/lib/db/database.ts` now refuses to open the journal on a build with no
+SQLCipher, which turns that silence into an error, but the rule stands.)
+
+The reasoning is in
+[`docs/decisions/0016`](../docs/decisions/0016-development-builds-required.md);
+the short version is that the alternative preserving Expo Go was hand-rolled
+field encryption over plain SQLite, which is a worse thing to maintain and a
+worse thing to trust with medical data.
+
+The other consequence worth knowing up front: **testing on a physical iPhone now
+needs a Mac**, or EAS Build. Expo Go used to be the way around that, and is not
+any more — see [Running on a physical iPhone](#running-on-a-physical-iphone).
+
 ## Prerequisites
 
-- Node.js 20.19.4 or newer (React Native 0.86 will not build on older versions)
+- Node.js 20.19.4 or newer — React Native 0.86 will not build on older versions.
+  Use 22.x if you can: two test suites need `node:sqlite`, which arrived in 22.5,
+  and that is what CI runs.
 - npm
-- **Xcode** for iOS, which needs macOS — or **Android Studio** with the Android
-  SDK for Android
+- **For iOS:** macOS with [Xcode](https://developer.apple.com/xcode/) installed,
+  plus its command line tools. There is no way to build for iOS without a Mac.
+- **For Android:** [Android Studio](https://developer.android.com/studio) with
+  the SDK and either an emulator or a device with USB debugging on. This works
+  on macOS, Linux and Windows.
 
-**This app no longer runs in [Expo Go](https://expo.dev/go).** The journal is
-encrypted with SQLCipher, which is a native fork of SQLite that Expo Go does not
-ship, so running the app means building it yourself.
-[`docs/decisions/0016`](../docs/decisions/0016-development-builds-required.md)
-argues the trade. Two consequences are worth knowing before you start rather
-than discovering half way through:
-
-- **The first build takes tens of minutes** and pulls down several GB of native
-  toolchain. Builds after that are quick, and day-to-day work only needs Metro.
-- **Testing on a physical iPhone now needs a Mac**, or EAS Build. Expo Go used
-  to be the way around that, and is not any more.
+You need one of those two, not both.
 
 ## Setup
 
 ```bash
 cd mobile
 npm install
-npx expo prebuild     # generates ios/ and android/ from app.json
-npm run ios           # or: npm run android
+npx expo prebuild        # generates the native ios/ and android/ projects
+npx expo run:ios         # or: npx expo run:android
 ```
 
-`ios/` and `android/` are generated rather than checked in — `npx expo prebuild`
-recreates them from `app.json`, which keeps the native configuration in one
-reviewable place. Re-run it after changing `app.json`, or after adding a
-dependency that has native code.
+**`prebuild` will stop and ask you for a bundle identifier** (and an Android
+package name) the first time, because `app.json` does not set them yet. Do not
+invent one to get past the prompt — whatever you answer is written into
+`app.json` and becomes the app's permanent identity in the App Store and on
+every device. Ask first if it is still unset.
 
-Once the development build is installed on the simulator or device, `npm start`
-runs Metro on its own and the app picks it up, the same as it always did. You
-only need to build again when native code changes.
+`run:ios` and `run:android` compile the app and install it on a simulator,
+emulator or connected device. **Expect the first build to be slow** — it is
+compiling native code, SQLCipher included. Later builds are much quicker, and
+you only need to build again when a native dependency or `app.json` changes.
+
+(`run:ios` and `run:android` run `prebuild` for you if the native projects are
+missing. It is listed separately above so it is clear what is happening.)
+
+`ios/` and `android/` are generated rather than checked in, so `app.json` stays
+the one reviewable place the native configuration lives. They are gitignored,
+and `npx expo prebuild --clean` regenerates them if they get into a bad state.
 
 Start the Rails API too, or the **Tasks** demo screen will load with a
 connection error. The journal itself needs no server — see
@@ -52,15 +86,85 @@ connection error. The journal itself needs no server — see
 bin/rails server -b 0.0.0.0
 ```
 
-Your computer and phone need to be on the same network; if local discovery
-fails, try a tunnel:
+After the first build, day to day is:
 
 ```bash
-npx expo start --tunnel
+npm start        # runs expo start --dev-client
+```
+
+and pressing `i` or `a` to open the build you already installed. The
+`--dev-client` flag is what aims those keys at your build: `expo start` picks
+its default target by whether `expo-dev-client` is in `package.json` — it is
+not — so a bare `npx expo start` would install and open **Expo Go** instead,
+which fails in the quiet way described above. (`run:ios` and `run:android`
+force the flag themselves, which is why the first day works and the morning
+after is where this used to bite.) With the flag, if no build is installed the
+CLI says so and stops rather than reaching for Expo Go.
+
+A QR code still prints, but it now opens your installed build via its URL
+scheme rather than Expo Go — and since the build has its Metro host baked in
+(see the note on `expo-dev-client` below), it does nothing that tapping the
+app icon does not.
+
+Your computer and phone still need to be on the same network for Metro to serve
+the bundle; if local discovery fails, try a tunnel:
+
+```bash
+npx expo start --dev-client --tunnel
 ```
 
 Note that a tunnel only routes the JavaScript bundle, not your API. See the
 root README for the full story, including WSL2 port forwarding.
+
+## Running on a physical iPhone
+
+Worth doing, and not only for convenience — several things this app depends on
+cannot be checked in a simulator at all. See the end of this section.
+
+You need a Mac with Xcode, but **a free Apple ID is enough**. There is nothing
+here that requires a paid developer account: no push notifications, no app
+groups, no associated domains. Keychain and Face ID both work under free
+provisioning.
+
+```bash
+npx expo run:ios --device     # then pick your iPhone from the list
+```
+
+If signing fails — likely the first time on a free account — open
+`ios/*.xcworkspace` in Xcode once, select the app target, go to **Signing &
+Capabilities**, tick *Automatically manage signing*, and set Team to your
+personal team. Then run the command again. On the phone, the first launch needs
+**Settings → General → VPN & Device Management**, where you trust the developer
+certificate.
+
+After that first build over the cable, tick *Connect via network* in Xcode's
+Window → Devices and Simulators, and you can leave the cable in a drawer.
+
+Day to day is then the same as everywhere else: `npm start` on the Mac, open the
+app on the phone, Fast Refresh. Both need to be on the same Wi-Fi.
+
+Two things a free account costs you:
+
+- **The build expires after seven days.** Re-run `npx expo run:ios --device`;
+  it is incremental and much faster than the first one.
+- **Three self-signed apps per device**, total, across everything you develop.
+
+If you do this often, install [`expo-dev-client`](https://docs.expo.dev/develop/development-builds/introduction/).
+Without it the Metro host is baked in at build time, so the build stops finding
+your Mac whenever its address on the network changes; with it you get a launcher
+that lets you enter or scan the URL instead of rebuilding.
+
+### What only a real device can tell you
+
+- **Face ID and the unlock gate.** Simulators do not enforce biometric
+  authentication when retrieving a stored secret, which expo-secure-store's own
+  documentation calls out — so the whole unlock path in
+  [`docs/decisions/0015`](../docs/decisions/0015-database-key-storage.md)
+  behaves differently there and a green simulator run proves nothing about it.
+- **That the database is actually encrypted.** Nothing in the test suite shows
+  this, because `node:sqlite` is stock SQLite with no SQLCipher.
+- **Keychain behaviour** — whether the key survives what it should and does not
+  survive what it should not.
 
 ## Other commands
 
@@ -74,16 +178,27 @@ npm test
 npm run test:watch
 ```
 
-`npm run ios` and `npm run android` build and install the development build,
-so the first run of either is the slow one described above.
+`npm run ios` and `npm run android` are `expo run:ios` / `expo run:android` —
+the full compile-and-install from [Setup](#setup), not a bundler-only start.
+Reach for them when a native dependency or `app.json` changes; the rest of the
+time, `npm start` against the build you already have is the whole loop.
 
 The iOS simulator requires macOS and Xcode, and so now does any iOS device.
+Android requires Android Studio.
 
-`npm run web` serves the landing page only. Per
+**`npm run web` is not a preview of the app.** It serves the landing and
+marketing surface, and nothing that touches journal data. SQLCipher has no web
+build, so per
 [`docs/decisions/0017`](../docs/decisions/0017-journal-data-is-native-only.md)
-SQLCipher has no web build, so the journal deliberately refuses to open in a
-browser rather than quietly falling back to unencrypted storage. `npm run web`
-is not a preview of the app.
+the journal database refuses to open in a browser rather than falling back to
+writing an unencrypted medical journal into browser storage. Any screen that
+reads the journal throws there instead of rendering, and that is deliberate.
+
+### Showing the app to someone
+
+Expo Go used to make this a one-minute job and no longer does. The options now
+are a shared development build, or the web landing page for anything that does
+not need journal data.
 
 ## Project structure
 
