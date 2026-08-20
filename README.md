@@ -32,7 +32,15 @@ in development and shipped to the app stores by EAS in production.
 | | |
 |---|---|
 | Ruby | 4.0.5 (see `.ruby-version`) |
-| Node | **20.19.4 or newer** — React Native 0.86 refuses to build on older versions |
+| Node | **20.19.4 or newer** — React Native 0.86 refuses to build on older versions. Two mobile test suites need **22.5 or newer** and skip below it |
+| iOS | Xcode, which needs macOS |
+| Android | Android Studio with the Android SDK |
+
+Xcode or Android Studio are needed because the mobile app no longer runs in Expo
+Go — the journal is encrypted with SQLCipher, which is native code. See
+[`mobile/README.md`](mobile/README.md) for the build, and
+[`docs/decisions/0016`](docs/decisions/0016-development-builds-required.md) for
+why.
 
 If `node -v` reports something older, install a current LTS with
 [nvm](https://github.com/nvm-sh/nvm):
@@ -57,14 +65,23 @@ You need both processes up. Use two terminals:
 # Terminal 1 — the API. Bind to 0.0.0.0 so a phone can reach it.
 bin/rails server -b 0.0.0.0
 
-# Terminal 2 — the phone app
+# Terminal 2 — the phone app. First run only:
+cd mobile && npx expo prebuild && npm run ios   # or npm run android
+
+# After that, Metro on its own is enough:
 cd mobile && npx expo start
 ```
 
-Then press `i` for the iOS simulator, `a` for the Android emulator, `w` for the
-browser, or scan the QR code with Expo Go on a real phone. Open the **Tasks**
+The first build takes tens of minutes and downloads several GB of native
+toolchain; later ones are quick. Once the development build is installed, press
+`i` for the iOS simulator or `a` for the Android emulator. Open the **Tasks**
 tab: the list is served by Rails, and adding, ticking and deleting write back to
 it.
+
+`w` still opens the browser, but only the landing page — per
+[`docs/decisions/0017`](docs/decisions/0017-journal-data-is-native-only.md) the
+encrypted journal refuses to open on web rather than falling back to
+unencrypted browser storage, so the web target is not a preview of the app.
 
 ## How the app finds Rails
 
@@ -185,12 +202,10 @@ rotating-contributor model, read that folder before you read the code.
 - **Rate limiting.** Also absent. Rails 8 ships `rate_limit` at the controller
   level, which needs a cache store configured in whatever environment serves
   this API.
-- **Native builds.** `npx expo start` runs inside Expo Go, which only includes
-  Expo's own native modules. The moment you add a library with custom native
-  code you need a development build (`npx expo run:ios` / `run:android`) and
-  [EAS Build](https://docs.expo.dev/build/introduction/) for the app stores.
-  `mobile/app.json` still needs `ios.bundleIdentifier`, `android.package` and an
-  EAS project id before any of that works.
+- **Store builds.** Development builds work locally, and `app.json` now carries
+  `ios.bundleIdentifier` and `android.package`. Shipping to the app stores still
+  needs [EAS Build](https://docs.expo.dev/build/introduction/) and an EAS
+  project id, which nothing here sets up yet.
 - **The starter screens.** Home and Explore are still Expo's template: Expo
   branding, Expo logo, links to Expo's docs. Tasks is the only screen that
   belongs to this project. Replacing them also retires several dependencies
