@@ -58,6 +58,17 @@ export class UnrecoverableJournalError extends Error {
  */
 let openPromise: Promise<SQLiteDatabase> | null = null;
 
+/**
+ * The close in flight, if there is one.
+ *
+ * `closeJournalDatabase` has to drop the cached open *before* it awaits
+ * `closeAsync`, or a caller arriving mid-close would be handed a handle that is
+ * already shutting down. That leaves a window where nothing records that the
+ * file is still owned, and `getJournalDatabase` would open a second connection
+ * across it. This is what fills the window.
+ */
+let closePromise: Promise<void> | null = null;
+
 async function open(): Promise<SQLiteDatabase> {
   // expo-sqlite runs on web via wasm, but SQLCipher does not: the docs list it
   // for Android, iOS and macOS only. Falling back to plain SQLite here would
@@ -78,6 +89,10 @@ async function open(): Promise<SQLiteDatabase> {
     // Has to be the first statement executed against the connection.
     await db.execAsync(rawKeyPragma(key));
 
+    // Before assertReadable, which cannot tell an encrypted file it decrypted
+    // from a plaintext one it never had to.
+    await assertEncrypted(db);
+
     await assertReadable(db, created);
 
     await db.execAsync('PRAGMA journal_mode = WAL');
@@ -88,6 +103,9 @@ async function open(): Promise<SQLiteDatabase> {
     // Do not leave a half-configured handle behind for the next caller.
     await db.closeAsync().catch(() => undefined);
     if (cause instanceof UnrecoverableJournalError) throw cause;
+    // Already both specific and accurate - re-wrapping would bury the one
+    // sentence that says what to do about it.
+    if (cause instanceof DatabaseUnavailableError) throw cause;
     throw new DatabaseUnavailableError('Could not open the journal database.', { cause });
   }
 
@@ -95,13 +113,55 @@ async function open(): Promise<SQLiteDatabase> {
 }
 
 /**
+ * Refuses to carry on when the binary has no SQLCipher in it.
+ *
+ * `PRAGMA key` is not evidence of anything. SQLite's response to a pragma it
+ * does not recognise is to ignore it - no error, no warning, no rows - so on a
+ * plain SQLite build the keying statement above succeeds, every read and write
+ * after it succeeds, and the journal is written in cleartext while the app
+ * behaves in every observable way as though it were not. That is the failure
+ * this project can least afford to let pass quietly, and issue #130 is it.
+ *
+ * `PRAGMA cipher_version` is the discriminator, and it works *because* of the
+ * same rule that causes the bug. SQLCipher implements it and answers with a
+ * single row holding its version string; stock SQLite has never heard of it and
+ * so returns no rows at all. Absence is the signal, which is why this tests the
+ * value rather than waiting for a throw - neither build throws.
+ *
+ * The two sides of that are checkable in this repo rather than taken on trust:
+ * `vendor/sqlcipher/sqlite3.c` in expo-sqlite answers `cipher_version` from its
+ * pragma table, and `vendor/sqlite3/sqlite3.c` - the source compiled in when
+ * `useSQLCipher` is absent - does not contain the string.
+ *
+ * It throws rather than warning. 0017 already settled the principle for web: a
+ * downgrade from encrypted to plaintext is not a reduced service this app
+ * offers, so there is no degraded mode to continue into, and a warning is a
+ * line in a log nobody reads while the journal is written in the clear
+ * regardless. Nor can this strand a user on a correct build - whether SQLCipher
+ * is compiled in is fixed when the binary is built, so it fails identically on
+ * every launch of a misbuilt app and on none of a good one. It surfaces on the
+ * machine of whoever skipped `npx expo prebuild`, which is where it is fixable.
+ *
+ * What no test on a laptop can show is the *passing* side: node:sqlite is stock
+ * SQLite, so CI can only ever prove that a non-SQLCipher build is rejected. That
+ * a real SQLCipher build satisfies this needs a device - issue #101.
+ */
+async function assertEncrypted(db: SQLiteDatabase): Promise<void> {
+  const row = await db.getFirstAsync<{ cipher_version?: string }>('PRAGMA cipher_version');
+
+  if (!row?.cipher_version) {
+    throw new DatabaseUnavailableError(
+      'This build has no SQLCipher, so the journal would be stored unencrypted. Rebuild with `useSQLCipher` set for expo-sqlite in app.json and run `npx expo prebuild`; Expo Go cannot run this app.'
+    );
+  }
+}
+
+/**
  * Reads a page, so a key that does not fit this file is discovered here rather
  * than several screens away at the first real query.
  *
- * What this does not catch: on a build without SQLCipher, `PRAGMA key` is
- * silently ignored - SQLite ignores unknown pragmas - and this read succeeds
- * against a plaintext file. Detecting that needs `PRAGMA cipher_version`; see
- * issue #130.
+ * This says nothing about whether the file is encrypted - a plaintext database
+ * reads perfectly. `assertEncrypted` above runs first for that reason.
  *
  * What it does catch, given `keyWasCreated`, is the restored-backup case. A key
  * we just minted cannot fail to read a database we just created, so if it fails
@@ -128,21 +188,70 @@ async function assertReadable(db: SQLiteDatabase, keyWasCreated: boolean): Promi
 
 /** The shared database handle, opening and migrating it on first call. */
 export function getJournalDatabase(): Promise<SQLiteDatabase> {
-  openPromise ??= open().catch((error: unknown) => {
+  openPromise ??= openOnceClosed().catch((error: unknown) => {
     openPromise = null;
     throw error;
   });
   return openPromise;
 }
 
+/**
+ * Waits out a close still in progress, then opens.
+ *
+ * Without the wait, a `getJournalDatabase()` arriving while `closeAsync` is
+ * still running opens a second connection to a file the first one has not let
+ * go of. Two things then go wrong, and neither is theoretical now that the
+ * unlock gate closes the database from an AppState listener - backgrounding the
+ * app races every screen that is mid-query.
+ *
+ * The first is that locking stops locking. The gate closes the handle so the
+ * decrypted database and its key do not outlive the foreground; an open that
+ * slips in behind it hands back a fresh decrypted handle moments later, and the
+ * cached promise now points at *that* one, so the close completes against a
+ * connection nobody is using any more.
+ *
+ * The second is `destroyJournalDatabase`, which cannot delete a file while a
+ * connection to it is cached - see the note there.
+ *
+ * A close that fails is still a close that finished, so the rejection is
+ * swallowed here rather than blocking every future open on one bad teardown.
+ */
+async function openOnceClosed(): Promise<SQLiteDatabase> {
+  await closePromise?.catch(() => undefined);
+  return open();
+}
+
 /** Closes the handle if one is open. Safe to call when none is. */
 export async function closeJournalDatabase(): Promise<void> {
   const pending = openPromise;
-  if (!pending) return;
+  if (!pending) {
+    // Nothing of ours to close, but a close another caller started may still be
+    // running. Returning now would report "closed" while the file is open,
+    // which is exactly the lie destroyJournalDatabase must not be told.
+    await closePromise;
+    return;
+  }
+
+  // Dropped before the await so nobody is handed a handle that is on its way
+  // out; closePromise below is what keeps the file accounted for meanwhile.
   openPromise = null;
 
-  const db = await pending.catch(() => null);
-  await db?.closeAsync();
+  const closing = (async () => {
+    const db = await pending.catch(() => null);
+    await db?.closeAsync();
+  })();
+
+  // Published in the same synchronous turn as the line above - the body of
+  // `closing` suspends at its first await - so there is no tick in which both
+  // are null and an open could slip between them.
+  closePromise = closing;
+
+  try {
+    await closing;
+  } finally {
+    // Only if it is still ours: a later close may already have replaced it.
+    if (closePromise === closing) closePromise = null;
+  }
 }
 
 /**
@@ -161,9 +270,54 @@ export async function closeJournalDatabase(): Promise<void> {
  *
  * Both orders destroy the data. Only one of them leaves the app somewhere the
  * user can go.
+ *
+ * Ordering the two steps is not on its own enough, which is what issue #135 was
+ * about. If the first step fails and the second runs anyway, the order bought
+ * nothing: the outcome is the same key-less file, arrived at without the process
+ * needing to die at all. So a failed delete aborts here rather than being
+ * swallowed, and only a file that was already absent counts as a delete that
+ * succeeded.
  */
 export async function destroyJournalDatabase(): Promise<void> {
   await closeJournalDatabase();
-  await SQLite.deleteDatabaseAsync(DATABASE_NAME).catch(() => undefined);
+
+  try {
+    await SQLite.deleteDatabaseAsync(DATABASE_NAME);
+  } catch (cause) {
+    if (!isDatabaseAlreadyGone(cause)) {
+      // Stop here, before the key. The file is still on disk, and deleting the
+      // key on top of it produces the one outcome the ordering above exists to
+      // prevent - reached, absurdly, by the control that is meant to be the way
+      // out of it.
+      throw new DatabaseUnavailableError(
+        'The journal could not be erased, so nothing was erased and it is still readable. Please try again.',
+        { cause }
+      );
+    }
+  }
+
   await deleteDatabaseKey();
+}
+
+/**
+ * True for the single delete failure that is not one: there was no file.
+ *
+ * This has to be a guess about a string, and it is worth being clear about why.
+ * expo-sqlite throws for a missing file (`DatabaseNotFoundException`) exactly as
+ * it throws when the database is still open (`DeleteDatabaseException`) or when
+ * the unlink fails outright (`DeleteDatabaseFileException`), and the SDK
+ * documents none of the three. There is no shared code to switch on either: iOS
+ * files all three under `E_SQLITE_DELETE_DATABASE`. The message is what is left,
+ * and it is at least consistent across platforms - "Database <name> not found"
+ * on Android, "Database <path> not found" on iOS.
+ *
+ * So this is deliberately narrow, and deliberately fragile in the safe
+ * direction. If a future SDK rewords the message, the match fails and erasing an
+ * already-empty journal reports an error instead of finishing quietly: wrong,
+ * visible, and harmless - the next launch starts clean anyway. The failure this
+ * replaces was the other kind. `.catch(() => undefined)` treated "still open"
+ * as success, destroyed the key, left the file, and said it had worked.
+ */
+function isDatabaseAlreadyGone(error: unknown): boolean {
+  return error instanceof Error && /not found/i.test(error.message);
 }
