@@ -11,6 +11,13 @@
 # It's strongly recommended that you check this file into your version control system.
 
 ActiveRecord::Schema[8.1].define(version: 2026_08_29_113836) do
+  create_table "addresses", force: :cascade do |t|
+    t.string "city"
+    t.datetime "created_at", null: false
+    t.string "state"
+    t.datetime "updated_at", null: false
+  end
+
   create_table "medication_types", force: :cascade do |t|
     t.datetime "created_at", null: false
     t.string "name"
