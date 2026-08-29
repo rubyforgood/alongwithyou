@@ -16,4 +16,23 @@ class DoctorQuestionTest < ActiveSupport::TestCase
     assert_not question.valid?
     assert_includes question.errors[:doctor_question_type], "must exist"
   end
+
+  test "rejects a question longer than 1000 characters" do
+    question = DoctorQuestion.new(
+      question: "a" * 1001,
+      doctor_question_type: doctor_question_types(:health_concern)
+    )
+
+    assert_not question.valid?
+    assert_includes question.errors[:question], "is too long (maximum is 1000 characters)"
+  end
+
+  test "accepts a question of exactly 1000 characters" do
+    question = DoctorQuestion.new(
+      question: "a" * 1000,
+      doctor_question_type: doctor_question_types(:health_concern)
+    )
+
+    assert question.valid?
+  end
 end

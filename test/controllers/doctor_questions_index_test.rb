@@ -33,4 +33,23 @@ class DoctorQuestionsIndexTest < ActionDispatch::IntegrationTest
     types = css_select("tbody tr td:first-child").map(&:text)
     assert_equal types.sort, types
   end
+
+  test "sorts by the question column" do
+    get doctor_questions_url(sort: "question", direction: "asc")
+
+    questions = css_select("tbody tr td:nth-child(2)").map(&:text)
+    assert_equal questions.sort, questions
+
+    # The fixtures sort differently by question than by type, so this also
+    # proves the question sort is not quietly falling back to the default.
+    types = css_select("tbody tr td:first-child").map(&:text)
+    assert_not_equal types.sort, types
+  end
+
+  test "reverses the question column" do
+    get doctor_questions_url(sort: "question", direction: "desc")
+
+    questions = css_select("tbody tr td:nth-child(2)").map(&:text)
+    assert_equal questions.sort.reverse, questions
+  end
 end

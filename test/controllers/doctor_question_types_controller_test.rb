@@ -17,7 +17,7 @@ class DoctorQuestionTypesControllerTest < ActionDispatch::IntegrationTest
 
   test "should create doctor_question_type" do
     assert_difference("DoctorQuestionType.count") do
-      post doctor_question_types_url, params: { doctor_question_type: { name: "Insurance" } }
+      post doctor_question_types_url, params: { doctor_question_type: { name: "Medication" } }
     end
 
     assert_redirected_to doctor_question_type_url(DoctorQuestionType.last)

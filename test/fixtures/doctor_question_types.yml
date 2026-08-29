@@ -9,7 +9,10 @@ health_concern:
 surgery:
   name: Surgery
 
+insurance:
+  name: Insurance
+
 # Deliberately referenced by no question, so a test has something it is allowed
-# to destroy. dependent: :restrict_with_error blocks deleting the other two.
+# to destroy. dependent: :restrict_with_error blocks deleting the others.
 unused:
   name: Costs
