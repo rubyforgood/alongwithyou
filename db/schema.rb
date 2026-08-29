@@ -10,7 +10,16 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_08_29_113836) do
+ActiveRecord::Schema[8.1].define(version: 2026_08_29_145325) do
+  create_table "addresses", force: :cascade do |t|
+    t.string "city"
+    t.datetime "created_at", null: false
+    t.integer "person_id", null: false
+    t.string "state"
+    t.datetime "updated_at", null: false
+    t.index ["person_id"], name: "index_addresses_on_person_id"
+  end
+
   create_table "medication_types", force: :cascade do |t|
     t.datetime "created_at", null: false
     t.string "name"
@@ -86,6 +95,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_08_29_113836) do
     t.index ["unlock_token"], name: "index_users_on_unlock_token", unique: true
   end
 
+  add_foreign_key "addresses", "people"
   add_foreign_key "medications", "medication_types"
   add_foreign_key "people", "relationships"
 end
