@@ -17,58 +17,13 @@
   </div>
 
   <div>
-    <%= form.label :medication_type_id, style: "display: block" %>
-    <%= form.text_field :medication_type_id %>
+    <%= form.label :medication_type_id, "Medication type", style: "display: block" %>
+    <%= form.collection_select :medication_type_id, MedicationType.order(:name), :id, :name, include_blank: true %>
   </div>
 
   <div>
-    <%= form.label :current, style: "display: block" %>
-    <%= form.checkbox :current %>
-  </div>
-
-  <div>
-    <%= form.label :dosage, style: "display: block" %>
-    <%= form.text_field :dosage %>
-  </div>
-
-  <div>
-    <%= form.label :frequency, style: "display: block" %>
-    <%= form.text_field :frequency %>
-  </div>
-
-  <div>
-    <%= form.label :time_of_day, style: "display: block" %>
-    <%= form.text_field :time_of_day %>
-  </div>
-
-  <div>
-    <%= form.label :form, style: "display: block" %>
-    <%= form.text_field :form %>
-  </div>
-
-  <div>
-    <%= form.label :purpose, style: "display: block" %>
-    <%= form.textarea :purpose %>
-  </div>
-
-  <div>
-    <%= form.label :start_date, style: "display: block" %>
-    <%= form.date_field :start_date %>
-  </div>
-
-  <div>
-    <%= form.label :stop_date, style: "display: block" %>
-    <%= form.date_field :stop_date %>
-  </div>
-
-  <div>
-    <%= form.label :refill, style: "display: block" %>
-    <%= form.text_field :refill %>
-  </div>
-
-  <div>
-    <%= form.label :notes, style: "display: block" %>
-    <%= form.textarea :notes %>
+    <%= form.label :side_effects, style: "display: block" %>
+    <%= form.textarea :side_effects %>
   </div>
 
   <div>

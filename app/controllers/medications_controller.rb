@@ -49,11 +49,16 @@ class MedicationsController < ApplicationController
 
   # DELETE /medications/1 or /medications/1.json
   def destroy
-    @medication.destroy!
-
+    # A medication in use by a prescription refuses to be destroyed, so this
+    # reports the refusal rather than raising.
     respond_to do |format|
-      format.html { redirect_to medications_path, notice: "Medication was successfully destroyed.", status: :see_other }
-      format.json { head :no_content }
+      if @medication.destroy
+        format.html { redirect_to medications_path, notice: "Medication was successfully destroyed.", status: :see_other }
+        format.json { head :no_content }
+      else
+        format.html { redirect_to @medication, alert: @medication.errors.full_messages.to_sentence, status: :see_other }
+        format.json { render json: @medication.errors, status: :unprocessable_content }
+      end
     end
   end
 
@@ -65,6 +70,6 @@ class MedicationsController < ApplicationController
 
     # Only allow a list of trusted parameters through.
     def medication_params
-      params.expect(medication: [ :name, :medication_type_id, :current, :dosage, :frequency, :time_of_day, :form, :purpose, :start_date, :stop_date, :refill, :notes ])
+      params.expect(medication: [ :name, :medication_type_id, :side_effects ])
     end
 end

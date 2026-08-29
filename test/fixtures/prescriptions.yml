@@ -1,0 +1,27 @@
+# Read about fixtures at https://api.rubyonrails.org/classes/ActiveRecord/FixtureSet.html
+
+one:
+  medication: one
+  medication_form: one
+  dosage: 10 mg
+  frequency: Once daily
+  time_of_day: Morning
+  prescribing_doctor: Dr. Reyes
+  purpose: Blood pressure
+  active: true
+  start_date: 2026-08-01
+  stop_date: 2026-12-31
+  notes: Take with food
+
+two:
+  medication: two
+  medication_form: two
+  dosage: 200 mg
+  frequency: As needed
+  time_of_day: Evening
+  prescribing_doctor: Dr. Okafor
+  purpose: Joint pain
+  active: false
+  start_date: 2026-07-01
+  stop_date: 2026-07-31
+  notes: Stopped after the flare settled

@@ -312,6 +312,111 @@ form:has(input[name="_method"][value="delete"]) button:hover {
   background: hsl(var(--destructive) / 0.9);
 }
 
+/* --------------------------------------------------------------- tables --- */
+/*
+ * The prescriptions index is a log, so it is a real table. Seven columns will
+ * not fit a phone, and neither hiding columns nor collapsing each row into a
+ * card keeps a log scannable - so the table keeps its shape and the wrapper
+ * around it scrolls sideways instead.
+ */
+
+.table-scroll {
+  overflow-x: auto;
+  margin-bottom: var(--space-4);
+  border: 1px solid hsl(var(--border));
+  border-radius: var(--radius);
+  background: hsl(var(--card));
+  /* The rounded corners would otherwise be sliced off by the header band. */
+  overflow-y: hidden;
+}
+
+/* --content-width is a comfortable measure for reading sentences, and a log is
+   not sentences: seven columns do not fit in it, and scrolling sideways on a
+   wide monitor to reach the last two is silly. So once the window is wide
+   enough to spare it, the table steps out of the reading column and centres
+   itself on the page. Percentage margins resolve against the containing block,
+   so `50% - half the width` is what centres a box wider than its parent. */
+@media (min-width: 64rem) {
+  .table-scroll {
+    --table-width: min(1120px, 100vw - var(--space-6));
+
+    width: var(--table-width);
+    margin-inline: calc(50% - var(--table-width) / 2);
+  }
+}
+
+table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.9375rem;
+}
+
+th,
+td {
+  padding: var(--space-2) var(--space-3);
+  text-align: left;
+  vertical-align: top;
+}
+
+/* Same treatment as the field captions inside the scaffold cards below, so a
+   column heading and a field label read as the same kind of thing. */
+thead th {
+  border-bottom: 1px solid hsl(var(--border));
+  background: hsl(var(--muted));
+  color: hsl(var(--muted-foreground));
+  font-size: 0.8125rem;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+tbody tr + tr th,
+tbody tr + tr td { border-top: 1px solid hsl(var(--border)); }
+
+tbody tr:hover { background: hsl(var(--accent) / 0.5); }
+
+/* The row header - which medication this row is about. Everything else in the
+   row is a detail of it, so only this column is allowed to wrap. */
+tbody th[scope="row"] {
+  font-weight: 550;
+  min-width: 11rem;
+}
+
+tbody td { white-space: nowrap; }
+
+/* A second line under the row header: the form the medication comes in. */
+.table-note {
+  display: block;
+  color: hsl(var(--muted-foreground));
+  font-size: 0.8125rem;
+  font-weight: 400;
+}
+
+/* Whether a prescription is current. The word says it; the colour only agrees
+   with the word, so this still reads with colour vision differences or in
+   print. */
+.status {
+  display: inline-block;
+  padding: 1px var(--space-2);
+  border: 1px solid;
+  border-radius: 999px;
+  font-size: 0.8125rem;
+  font-weight: 600;
+}
+
+.status--active {
+  border-color: hsl(var(--success) / 0.4);
+  background: hsl(var(--success) / 0.14);
+  color: hsl(var(--foreground));
+}
+
+.status--stopped {
+  border-color: hsl(var(--border));
+  background: hsl(var(--muted));
+  color: hsl(var(--muted-foreground));
+}
+
 /* ------------------------------------------------- scaffold accommodation --- */
 /*
  * Everything below exists so the generator's output looks deliberate without
@@ -325,7 +430,8 @@ form:has(input[name="_method"][value="delete"]) button:hover {
    medication_name and so on, so an unanchored [id^="person_"] would card every
    input on every form as well. */
 div[id^="person_"],
-div[id^="medication_"] {
+div[id^="medication_"],
+div[id^="prescription_"] {
   padding: var(--space-3) var(--space-4);
   margin-bottom: var(--space-3);
   border: 1px solid hsl(var(--border));
@@ -336,7 +442,8 @@ div[id^="medication_"] {
 /* Inside those cards the pattern is <strong>Field name:</strong> value.
    Demoting the label and leading the value reads as a definition list. */
 div[id^="person_"] strong,
-div[id^="medication_"] strong {
+div[id^="medication_"] strong,
+div[id^="prescription_"] strong {
   display: block;
   color: hsl(var(--muted-foreground));
   font-size: 0.8125rem;
@@ -346,10 +453,12 @@ div[id^="medication_"] strong {
 }
 
 div[id^="person_"] > div,
-div[id^="medication_"] > div { margin-bottom: var(--space-2); }
+div[id^="medication_"] > div,
+div[id^="prescription_"] > div { margin-bottom: var(--space-2); }
 
 div[id^="person_"] > div:last-child,
-div[id^="medication_"] > div:last-child { margin-bottom: 0; }
+div[id^="medication_"] > div:last-child,
+div[id^="prescription_"] > div:last-child { margin-bottom: 0; }
 
 /* The scaffolds emit `<p style="color: green">` for the flash and
    `<div style="color: red">` for the error summary. The inline colour wins on

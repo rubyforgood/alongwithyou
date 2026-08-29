@@ -1,0 +1,57 @@
+<div id="<%= dom_id prescription %>">
+  <div>
+    <strong>Medication:</strong>
+    <%= prescription.medication.name %>
+  </div>
+
+  <div>
+    <strong>Form:</strong>
+    <%= prescription.medication_form&.name %>
+  </div>
+
+  <div>
+    <strong>Dosage:</strong>
+    <%= prescription.dosage %>
+  </div>
+
+  <div>
+    <strong>Frequency:</strong>
+    <%= prescription.frequency %>
+  </div>
+
+  <div>
+    <strong>Time of day:</strong>
+    <%= prescription.time_of_day %>
+  </div>
+
+  <div>
+    <strong>Prescribing doctor:</strong>
+    <%= prescription.prescribing_doctor %>
+  </div>
+
+  <div>
+    <strong>Purpose:</strong>
+    <%= prescription.purpose %>
+  </div>
+
+  <div>
+    <strong>Active:</strong>
+    <%= prescription_status prescription %>
+  </div>
+
+  <div>
+    <strong>Start date:</strong>
+    <%= or_dash prescription_date(prescription.start_date) %>
+  </div>
+
+  <div>
+    <strong>Stop date:</strong>
+    <%= or_dash prescription_date(prescription.stop_date) %>
+  </div>
+
+  <div>
+    <strong>Notes:</strong>
+    <%= prescription.notes %>
+  </div>
+
+</div>

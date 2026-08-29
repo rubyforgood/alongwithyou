@@ -1,7 +1,9 @@
 Rails.application.routes.draw do
   devise_for :users
   resources :medications
+  resources :medication_forms
   resources :medication_types
+  resources :prescriptions
   resources :people do
     resource :address, only: [ :show, :create, :update, :destroy ]
   end
