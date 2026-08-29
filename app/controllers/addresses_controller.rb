@@ -65,6 +65,6 @@ class AddressesController < ApplicationController
 
     # Only allow a list of trusted parameters through.
     def address_params
-      params.expect(address: [ :city, :state ])
+      params.expect(address: [ :city, :state, :person_id ])
     end
 end

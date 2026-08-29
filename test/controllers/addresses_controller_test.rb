@@ -17,7 +17,6 @@ class AddressesControllerTest < ActionDispatch::IntegrationTest
   end
 
   test "should create address" do
-    binding.pry
     assert_difference("Address.count") do
       post addresses_url, params: { address: { city: @address.city, state: @address.state, person_id: @address.person_id } }
     end
@@ -32,7 +31,7 @@ class AddressesControllerTest < ActionDispatch::IntegrationTest
 
   test "should get edit" do
     get edit_address_url(@address)
-    
+
     assert_response :success
   end
 
