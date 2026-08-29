@@ -1,4 +1,7 @@
 Rails.application.routes.draw do
+  resources :medications
+  resources :medication_types
+  resources :people
   # Define your application routes per the DSL in https://guides.rubyonrails.org/routing.html
 
   # JSON API consumed by the Expo app in mobile/.
