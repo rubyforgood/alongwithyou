@@ -3,7 +3,9 @@
 one:
   city: MyString
   state: MyString
+  person: one
 
 two:
   city: MyString
   state: MyString
+  person: two
