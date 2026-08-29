@@ -1,0 +1,10 @@
+<p style="color: green"><%= notice %></p>
+
+<%= render @appointment_requirement %>
+
+<div>
+  <%= link_to "Edit this appointment requirement", edit_appointment_requirement_path(@appointment_requirement) %> |
+  <%= link_to "Back to appointment requirements", appointment_requirements_path %>
+
+  <%= button_to "Destroy this appointment requirement", @appointment_requirement, method: :delete %>
+</div>
