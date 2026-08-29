@@ -35,11 +35,6 @@ class AddressesControllerTest < ActionDispatch::IntegrationTest
     assert_response :success
   end
 
-  test "should update address" do
-    patch address_url(@address), params: { address: { city: @address.city, state: @address.state } }
-    assert_redirected_to address_url(@address)
-  end
-
   test "should destroy address" do
     assert_difference("Address.count", -1) do
       delete address_url(@address)

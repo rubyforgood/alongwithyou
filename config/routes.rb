@@ -3,7 +3,7 @@ Rails.application.routes.draw do
   resources :medications
   resources :medication_types
   resources :people do
-    resource :address, only: [:show, :create, :update, :destroy]
+    resource :address, only: [ :show, :create, :update, :destroy ]
   end
   # Define your application routes per the DSL in https://guides.rubyonrails.org/routing.html
 
