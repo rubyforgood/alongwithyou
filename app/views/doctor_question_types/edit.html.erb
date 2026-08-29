@@ -1,0 +1,12 @@
+<% content_for :title, "Editing doctor question type" %>
+
+<h1>Editing doctor question type</h1>
+
+<%= render "form", doctor_question_type: @doctor_question_type %>
+
+<br>
+
+<div>
+  <%= link_to "Show this doctor question type", @doctor_question_type %> |
+  <%= link_to "Back to doctor question types", doctor_question_types_path %>
+</div>

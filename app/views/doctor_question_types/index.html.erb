@@ -1,0 +1,14 @@
+<p style="color: green"><%= notice %></p>
+
+<% content_for :title, "Doctor question types" %>
+
+<h1>Doctor question types</h1>
+
+<div id="doctor_question_types">
+  <% @doctor_question_types.each do |doctor_question_type| %>
+    <%= render doctor_question_type %>
+    <ul>
+      <%= render doctor_question_type.doctor_questions%>
+    </ul>
+  <% end %>
+</div>

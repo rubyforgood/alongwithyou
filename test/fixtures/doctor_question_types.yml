@@ -1,0 +1,15 @@
+# Read about fixtures at https://api.rubyonrails.org/classes/ActiveRecord/FixtureSet.html
+
+# Names have to differ from each other: fixtures are inserted straight into the
+# database, so they skip the model's validations but not its unique index.
+
+health_concern:
+  name: Health Concern
+
+surgery:
+  name: Surgery
+
+# Deliberately referenced by no question, so a test has something it is allowed
+# to destroy. dependent: :restrict_with_error blocks deleting the other two.
+unused:
+  name: Costs

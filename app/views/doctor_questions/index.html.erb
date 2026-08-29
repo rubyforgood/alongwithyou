@@ -1,0 +1,27 @@
+<p style="color: green"><%= notice %></p>
+
+<% content_for :title, "Questions to be asked" %>
+
+<h1>Questions to be asked</h1>
+
+<table>
+  <thead>
+    <tr>
+      <th><%= doctor_question_sort_link "type", "Type" %></th>
+      <th><%= doctor_question_sort_link "question", "Question" %></th>
+      <th></th>
+    </tr>
+  </thead>
+
+  <tbody>
+    <% @doctor_questions.each do |doctor_question| %>
+      <tr id="<%= dom_id doctor_question %>">
+        <td><%= doctor_question.doctor_question_type.name %></td>
+        <td><%= doctor_question.question %></td>
+        <td><%= link_to "Show this doctor question", doctor_question %></td>
+      </tr>
+    <% end %>
+  </tbody>
+</table>
+
+<%= link_to "New doctor question", new_doctor_question_path %>

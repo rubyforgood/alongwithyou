@@ -1,0 +1,2 @@
+module DoctorQuestionTypesHelper
+end

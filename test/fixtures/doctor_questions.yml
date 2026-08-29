@@ -1,0 +1,13 @@
+# Read about fixtures at https://api.rubyonrails.org/classes/ActiveRecord/FixtureSet.html
+
+# Two questions under different types, so the index has more than one type to
+# group and sort by. doctor_question_type names a label in
+# doctor_question_types.yml, which Rails resolves to that row's id.
+
+diagnosis:
+  question: Should I take this with food?
+  doctor_question_type: health_concern
+
+recovery:
+  question: What did the scan show?
+  doctor_question_type: surgery
