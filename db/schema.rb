@@ -85,6 +85,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_08_29_113836) do
     t.index ["reset_password_token"], name: "index_users_on_reset_password_token", unique: true
     t.index ["unlock_token"], name: "index_users_on_unlock_token", unique: true
   end
+
   add_foreign_key "medications", "medication_types"
   add_foreign_key "people", "relationships"
 end
