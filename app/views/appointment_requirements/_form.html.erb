@@ -1,0 +1,22 @@
+<%= form_with(model: appointment_requirement) do |form| %>
+  <% if appointment_requirement.errors.any? %>
+    <div style="color: red">
+      <h2><%= pluralize(appointment_requirement.errors.count, "error") %> prohibited this appointment_requirement from being saved:</h2>
+
+      <ul>
+        <% appointment_requirement.errors.each do |error| %>
+          <li><%= error.full_message %></li>
+        <% end %>
+      </ul>
+    </div>
+  <% end %>
+
+  <div>
+    <%= form.label :name, style: "display: block" %>
+    <%= form.text_field :name %>
+  </div>
+
+  <div>
+    <%= form.submit %>
+  </div>
+<% end %>

@@ -20,6 +20,12 @@ ActiveRecord::Schema[8.1].define(version: 2026_08_29_203900) do
     t.index ["person_id"], name: "index_addresses_on_person_id"
   end
 
+  create_table "appointment_requirements", force: :cascade do |t|
+    t.datetime "created_at", null: false
+    t.string "name"
+    t.datetime "updated_at", null: false
+  end
+
   create_table "medication_forms", force: :cascade do |t|
     t.datetime "created_at", null: false
     t.string "name"
