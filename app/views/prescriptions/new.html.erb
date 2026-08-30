@@ -1,0 +1,11 @@
+<% content_for :title, "New prescription" %>
+
+<h1>New prescription</h1>
+
+<%= render "form", prescription: @prescription %>
+
+<br>
+
+<div>
+  <%= link_to "Back to prescriptions", prescriptions_path %>
+</div>

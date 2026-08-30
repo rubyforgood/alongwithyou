@@ -1,29 +1,18 @@
 # Read about fixtures at https://api.rubyonrails.org/classes/ActiveRecord/FixtureSet.html
 
 one:
-  name: MyString
-  medication_type: two
-  current: false
-  dosage: MyString
-  frequency: MyString
-  time_of_day: MyString
-  form: MyString
-  purpose: MyText
-  start_date: 2026-08-29
-  stop_date: 2026-08-29
-  refill: MyString
-  notes: MyText
+  name: Lisinopril
+  medication_type: one
+  side_effects: Dry cough, dizziness, headache
 
 two:
-  name: MyString
+  name: Ibuprofen
   medication_type: two
-  current: false
-  dosage: MyString
-  frequency: MyString
-  time_of_day: MyString
-  form: MyString
-  purpose: MyText
-  start_date: 2026-08-29
-  stop_date: 2026-08-29
-  refill: MyString
-  notes: MyText
+  side_effects: Stomach upset, heartburn, dizziness
+
+# No prescription points at this one. A medication that is in use refuses to be
+# destroyed, so the destroy tests need a medication nothing depends on.
+three:
+  name: Warfarin
+  medication_type: one
+  side_effects: Easy bruising, bleeding, nausea

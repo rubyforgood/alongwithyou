@@ -17,10 +17,18 @@ class MedicationsControllerTest < ActionDispatch::IntegrationTest
 
   test "should create medication" do
     assert_difference("Medication.count") do
-      post medications_url, params: { medication: { current: @medication.current, dosage: @medication.dosage, form: @medication.form, frequency: @medication.frequency, medication_type_id: @medication.medication_type_id, name: @medication.name, notes: @medication.notes, purpose: @medication.purpose, refill: @medication.refill, start_date: @medication.start_date, stop_date: @medication.stop_date, time_of_day: @medication.time_of_day } }
+      post medications_url, params: { medication: { name: "Metformin", medication_type_id: @medication.medication_type_id, side_effects: "Nausea, diarrhea, stomach upset" } }
     end
 
     assert_redirected_to medication_url(Medication.last)
+  end
+
+  test "should not create medication without a name" do
+    assert_no_difference("Medication.count") do
+      post medications_url, params: { medication: { name: "", side_effects: "Nausea" } }
+    end
+
+    assert_response :unprocessable_content
   end
 
   test "should show medication" do
@@ -34,15 +42,25 @@ class MedicationsControllerTest < ActionDispatch::IntegrationTest
   end
 
   test "should update medication" do
-    patch medication_url(@medication), params: { medication: { current: @medication.current, dosage: @medication.dosage, form: @medication.form, frequency: @medication.frequency, medication_type_id: @medication.medication_type_id, name: @medication.name, notes: @medication.notes, purpose: @medication.purpose, refill: @medication.refill, start_date: @medication.start_date, stop_date: @medication.stop_date, time_of_day: @medication.time_of_day } }
+    patch medication_url(@medication), params: { medication: { name: @medication.name, medication_type_id: @medication.medication_type_id, side_effects: @medication.side_effects } }
     assert_redirected_to medication_url(@medication)
   end
 
   test "should destroy medication" do
+    unprescribed = medications(:three)
+
     assert_difference("Medication.count", -1) do
-      delete medication_url(@medication)
+      delete medication_url(unprescribed)
     end
 
     assert_redirected_to medications_url
+  end
+
+  test "should not destroy medication that a prescription depends on" do
+    assert_no_difference("Medication.count") do
+      delete medication_url(@medication)
+    end
+
+    assert_redirected_to medication_url(@medication)
   end
 end

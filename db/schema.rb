@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_08_29_145325) do
+ActiveRecord::Schema[8.1].define(version: 2026_08_29_203900) do
   create_table "addresses", force: :cascade do |t|
     t.string "city"
     t.datetime "created_at", null: false
@@ -18,6 +18,12 @@ ActiveRecord::Schema[8.1].define(version: 2026_08_29_145325) do
     t.string "state"
     t.datetime "updated_at", null: false
     t.index ["person_id"], name: "index_addresses_on_person_id"
+  end
+
+  create_table "medication_forms", force: :cascade do |t|
+    t.datetime "created_at", null: false
+    t.string "name"
+    t.datetime "updated_at", null: false
   end
 
   create_table "medication_types", force: :cascade do |t|
@@ -28,18 +34,9 @@ ActiveRecord::Schema[8.1].define(version: 2026_08_29_145325) do
 
   create_table "medications", force: :cascade do |t|
     t.datetime "created_at", null: false
-    t.boolean "current"
-    t.string "dosage"
-    t.string "form"
-    t.string "frequency"
-    t.integer "medication_type_id", null: false
+    t.integer "medication_type_id"
     t.string "name"
-    t.text "notes"
-    t.text "purpose"
-    t.string "refill"
-    t.date "start_date"
-    t.date "stop_date"
-    t.string "time_of_day"
+    t.text "side_effects"
     t.datetime "updated_at", null: false
     t.index ["medication_type_id"], name: "index_medications_on_medication_type_id"
   end
@@ -54,6 +51,24 @@ ActiveRecord::Schema[8.1].define(version: 2026_08_29_145325) do
     t.string "social_security_number"
     t.datetime "updated_at", null: false
     t.index ["relationship_id"], name: "index_people_on_relationship_id"
+  end
+
+  create_table "prescriptions", force: :cascade do |t|
+    t.boolean "active", default: true, null: false
+    t.datetime "created_at", null: false
+    t.string "dosage"
+    t.string "frequency"
+    t.integer "medication_form_id"
+    t.integer "medication_id", null: false
+    t.text "notes"
+    t.string "prescribing_doctor"
+    t.text "purpose"
+    t.date "start_date"
+    t.date "stop_date"
+    t.string "time_of_day"
+    t.datetime "updated_at", null: false
+    t.index ["medication_form_id"], name: "index_prescriptions_on_medication_form_id"
+    t.index ["medication_id"], name: "index_prescriptions_on_medication_id"
   end
 
   create_table "relationships", force: :cascade do |t|
@@ -98,4 +113,6 @@ ActiveRecord::Schema[8.1].define(version: 2026_08_29_145325) do
   add_foreign_key "addresses", "people"
   add_foreign_key "medications", "medication_types"
   add_foreign_key "people", "relationships"
+  add_foreign_key "prescriptions", "medication_forms"
+  add_foreign_key "prescriptions", "medications"
 end

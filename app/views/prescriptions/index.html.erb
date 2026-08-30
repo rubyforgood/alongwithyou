@@ -1,0 +1,52 @@
+<p style="color: green"><%= notice %></p>
+
+<% content_for :title, "Prescriptions" %>
+
+<h1>Prescriptions</h1>
+
+<% if @prescriptions.any? %>
+  <%# The wrapper, not the table, is what scrolls on a narrow screen. tabindex
+      makes that scroll reachable without a mouse, and the role/label keep a
+      focusable div from being announced as an unnamed group. %>
+  <div class="table-scroll" tabindex="0" role="region" aria-label="Prescriptions">
+    <table id="prescriptions">
+      <thead>
+        <tr>
+          <th scope="col">Medication</th>
+          <th scope="col">Dosage</th>
+          <th scope="col">Frequency</th>
+          <th scope="col">Time of day</th>
+          <th scope="col">Prescribing doctor</th>
+          <th scope="col">Started</th>
+          <th scope="col">Status</th>
+        </tr>
+      </thead>
+
+      <tbody>
+        <% @prescriptions.each do |prescription| %>
+          <tr id="<%= dom_id prescription %>">
+            <th scope="row">
+              <%= link_to prescription.medication.name, prescription %>
+              <% if prescription.medication_form %>
+                <span class="table-note"><%= prescription.medication_form.name %></span>
+              <% end %>
+            </th>
+            <td><%= or_dash prescription.dosage %></td>
+            <td><%= or_dash prescription.frequency %></td>
+            <td><%= or_dash prescription.time_of_day %></td>
+            <td><%= or_dash prescription.prescribing_doctor %></td>
+            <td>
+              <%= prescription_started prescription %>
+              <span class="table-note"><%= prescription_stopped prescription %></span>
+            </td>
+            <td><%= prescription_status prescription %></td>
+          </tr>
+        <% end %>
+      </tbody>
+    </table>
+  </div>
+<% else %>
+  <p>No prescriptions yet.</p>
+<% end %>
+
+<%= link_to "New prescription", new_prescription_path %>

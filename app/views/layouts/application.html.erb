@@ -46,10 +46,14 @@
               current_page?. %>
           <%= link_to "People", people_path,
                 aria: { current: aria_current_section(people_path) } %>
+          <%= link_to "Prescriptions", prescriptions_path,
+                aria: { current: aria_current_section(prescriptions_path) } %>
           <%= link_to "Medications", medications_path,
                 aria: { current: aria_current_section(medications_path) } %>
           <%= link_to "Medication types", medication_types_path,
                 aria: { current: aria_current_section(medication_types_path) } %>
+          <%= link_to "Medication forms", medication_forms_path,
+                aria: { current: aria_current_section(medication_forms_path) } %>
 
           <%# Devise signs out via DELETE, so this needs Turbo to issue the
               verb. button_to would work without it, but it would land in the

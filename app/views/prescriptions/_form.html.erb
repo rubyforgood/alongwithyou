@@ -1,0 +1,72 @@
+<%= form_with(model: prescription) do |form| %>
+  <% if prescription.errors.any? %>
+    <div style="color: red">
+      <h2><%= pluralize(prescription.errors.count, "error") %> prohibited this prescription from being saved:</h2>
+
+      <ul>
+        <% prescription.errors.each do |error| %>
+          <li><%= error.full_message %></li>
+        <% end %>
+      </ul>
+    </div>
+  <% end %>
+
+  <div>
+    <%= form.label :medication_id, "Medication", style: "display: block" %>
+    <%= form.collection_select :medication_id, Medication.order(:name), :id, :name, include_blank: true %>
+  </div>
+
+  <div>
+    <%= form.label :medication_form_id, "Form", style: "display: block" %>
+    <%= form.collection_select :medication_form_id, MedicationForm.order(:name), :id, :name, include_blank: true %>
+  </div>
+
+  <div>
+    <%= form.label :dosage, style: "display: block" %>
+    <%= form.text_field :dosage %>
+  </div>
+
+  <div>
+    <%= form.label :frequency, style: "display: block" %>
+    <%= form.text_field :frequency %>
+  </div>
+
+  <div>
+    <%= form.label :time_of_day, style: "display: block" %>
+    <%= form.text_field :time_of_day %>
+  </div>
+
+  <div>
+    <%= form.label :prescribing_doctor, style: "display: block" %>
+    <%= form.text_field :prescribing_doctor %>
+  </div>
+
+  <div>
+    <%= form.label :purpose, style: "display: block" %>
+    <%= form.textarea :purpose %>
+  </div>
+
+  <div>
+    <%= form.label :active, style: "display: block" %>
+    <%= form.checkbox :active %>
+  </div>
+
+  <div>
+    <%= form.label :start_date, style: "display: block" %>
+    <%= form.date_field :start_date %>
+  </div>
+
+  <div>
+    <%= form.label :stop_date, style: "display: block" %>
+    <%= form.date_field :stop_date %>
+  </div>
+
+  <div>
+    <%= form.label :notes, style: "display: block" %>
+    <%= form.textarea :notes %>
+  </div>
+
+  <div>
+    <%= form.submit %>
+  </div>
+<% end %>
