@@ -31,6 +31,12 @@ Rails.application.routes.draw do
   # get "manifest" => "rails/pwa#manifest", as: :pwa_manifest
   # get "service-worker" => "rails/pwa#service_worker", as: :pwa_service_worker
 
+  # The administrative area. The reference-data resources it covers keep their
+  # own top-level paths - this is only the landing page that gathers them, so
+  # the header can carry one Admin link instead of one per lookup table. See
+  # ApplicationHelper#admin_sections for the list it shows.
+  get "admin" => "admin#index", as: :admin
+
   # Defines the root path route ("/")
   root "home#index"
   get "world" => "home#world"

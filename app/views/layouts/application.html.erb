@@ -48,12 +48,14 @@
                 aria: { current: aria_current_section(people_path) } %>
           <%= link_to "Prescriptions", prescriptions_path,
                 aria: { current: aria_current_section(prescriptions_path) } %>
-          <%= link_to "Medications", medications_path,
-                aria: { current: aria_current_section(medications_path) } %>
-          <%= link_to "Medication types", medication_types_path,
-                aria: { current: aria_current_section(medication_types_path) } %>
-          <%= link_to "Medication forms", medication_forms_path,
-                aria: { current: aria_current_section(medication_forms_path) } %>
+
+          <%# One link for the whole administrative area. The lookup tables it
+              covers - medications, types, forms - are listed on /admin and in
+              the sub-nav below, which is where they belong: they are the app's
+              setup, not the work it exists for, and five flat links gave them
+              equal billing with People and Prescriptions. %>
+          <%= link_to "Admin", admin_path,
+                aria: { current: ("page" if admin_area?) } %>
 
           <%# Devise signs out via DELETE, so this needs Turbo to issue the
               verb. button_to would work without it, but it would land in the
@@ -72,6 +74,8 @@
         </nav>
       </div>
     </header>
+
+    <%= render "shared/admin_nav" if admin_area? %>
 
     <main id="main" class="site-main">
       <%= yield %>

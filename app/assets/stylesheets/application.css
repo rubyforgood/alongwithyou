@@ -233,6 +233,119 @@ code, pre { font-family: var(--font-mono); font-size: 0.9375em; }
 
 .site-main { padding-block: var(--space-5) var(--space-6); }
 
+/* ---------------------------------------------------------------- admin --- */
+/*
+ * The administrative area - the lists of medications, types and forms that
+ * are set up once rather than used daily. It is not a separate app: same
+ * header, same palette. The one signal that you have stepped sideways into
+ * setup is this second nav band, on the muted grey the sheet already uses for
+ * table headings and field captions.
+ *
+ * These sections still live at /medications and friends, so the band is what
+ * ties them together. ApplicationHelper#admin_area? decides when it shows.
+ */
+
+.admin-nav {
+  border-bottom: 1px solid hsl(var(--border));
+  background: hsl(var(--muted));
+  font-size: 0.9375rem;
+}
+
+.admin-nav__inner {
+  max-width: var(--content-width);
+  margin-inline: auto;
+  padding-inline: var(--space-3);
+  padding-block: var(--space-2);
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: var(--space-1) var(--space-3);
+}
+
+/* Names the band rather than labelling any one link, so the row still reads
+   as "Admin: Overview, Medications, ..." when the header is scrolled away.
+   The nav's aria-label says the same thing for a screen reader. */
+.admin-nav__label {
+  color: hsl(var(--muted-foreground));
+  font-size: 0.8125rem;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+}
+
+.admin-nav a {
+  color: hsl(var(--muted-foreground));
+  text-decoration: none;
+  padding-block: var(--space-1);
+}
+
+.admin-nav a:hover { color: hsl(var(--foreground)); }
+
+.admin-nav a[aria-current="page"] {
+  color: hsl(var(--primary));
+  font-weight: 600;
+}
+
+/* The opening sentence on /admin. Wider than body text would allow it to be
+   emphatic, so it stays the same size and only lightens. */
+.lede {
+  max-width: 46ch;
+  color: hsl(var(--muted-foreground));
+  margin-bottom: var(--space-4);
+}
+
+.admin-cards {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: var(--space-3);
+  /* One column on a phone, two once there is room for two readable ones. */
+  grid-template-columns: repeat(auto-fit, minmax(17rem, 1fr));
+}
+
+.admin-card {
+  position: relative;
+  padding: var(--space-3) var(--space-4);
+  border: 1px solid hsl(var(--border));
+  border-radius: var(--radius);
+  background: hsl(var(--card));
+}
+
+.admin-card:hover { border-color: hsl(var(--primary) / 0.5); }
+
+.admin-card__title {
+  font-size: 1.0625rem;
+  margin-bottom: var(--space-1);
+}
+
+/* Stretching the one link over the whole card makes the card a click target
+   without adding a second link to the same place - which a screen reader would
+   read out twice and a keyboard user would have to tab through twice. */
+.admin-card__link { text-decoration: none; }
+
+.admin-card__link::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+}
+
+/* With the pseudo-element covering the card, the focus ring would otherwise
+   draw around the words alone while the whole card is what activates. */
+.admin-card__link:focus-visible { outline: none; }
+
+.admin-card:has(.admin-card__link:focus-visible) {
+  outline: 2px solid hsl(var(--ring));
+  outline-offset: 2px;
+}
+
+.admin-card__description {
+  margin: 0;
+  color: hsl(var(--muted-foreground));
+  font-size: 0.9375rem;
+}
+
 .site-footer {
   border-top: 1px solid hsl(var(--border));
   color: hsl(var(--muted-foreground));
