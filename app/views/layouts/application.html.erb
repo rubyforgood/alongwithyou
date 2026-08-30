@@ -36,7 +36,14 @@
 
     <header class="site-header">
       <div class="site-header__inner">
-        <%= link_to "Along With You", root_path, class: "site-title" %>
+        <%# The logo is the site name, so the alt text carries it and the link
+            needs no extra label - an aria-label here would only override the
+            alt with the same words. The SVG lifts its deep blue in dark mode
+            from a media query inside the file itself; see
+            app/assets/images/along-with-you-logo.svg. %>
+        <%= link_to root_path, class: "site-title" do %>
+          <%= image_tag "along-with-you-logo.svg", alt: "Along With You", class: "site-logo" %>
+        <% end %>
 
         <nav class="site-nav" aria-label="Main">
           <%# aria-current marks the active link for screen readers, and

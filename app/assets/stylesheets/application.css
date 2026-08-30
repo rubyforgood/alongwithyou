@@ -186,11 +186,21 @@ code, pre { font-family: var(--font-mono); font-size: 0.9375em; }
 }
 
 .site-title {
-  font-size: 1.0625rem;
-  font-weight: 650;
-  letter-spacing: -0.01em;
-  color: hsl(var(--foreground));
+  /* The logo replaced the text wordmark, so this is now a wrapper around an
+     image. Inline-flex keeps it hugging the logo - a plain block link would
+     stretch and give the focus ring a long empty tail. */
+  display: inline-flex;
   text-decoration: none;
+}
+
+.site-logo {
+  /* Height only. The SVG carries the aspect ratio, so width follows and the
+     mark never distorts. 30px sits the logo's cap height close to the nav
+     links beside it; the header's `align-items: baseline` then lands the
+     logo's bottom edge on their baseline. */
+  display: block;
+  height: 30px;
+  width: auto;
 }
 
 .site-nav {
