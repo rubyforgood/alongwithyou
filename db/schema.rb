@@ -10,12 +10,13 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_08_29_145325) do
+ActiveRecord::Schema[8.1].define(version: 2026_08_29_201158) do
   create_table "addresses", force: :cascade do |t|
     t.string "city"
     t.datetime "created_at", null: false
     t.integer "person_id", null: false
     t.string "state"
+    t.string "street_address"
     t.datetime "updated_at", null: false
     t.index ["person_id"], name: "index_addresses_on_person_id"
   end

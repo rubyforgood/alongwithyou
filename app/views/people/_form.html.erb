@@ -2,7 +2,6 @@
   <% if person.errors.any? %>
     <div style="color: red">
       <h2><%= pluralize(person.errors.count, "error") %> prohibited this person from being saved:</h2>
-
       <ul>
         <% person.errors.each do |error| %>
           <li><%= error.full_message %></li>
@@ -25,7 +24,7 @@
     <%= form.label :date_of_birth, style: "display: block" %>
     <%= form.date_field :date_of_birth %>
   </div>
-
+  
   <div>
     <%= form.label :social_security_number, style: "display: block" %>
     <%= form.text_field :social_security_number %>
@@ -40,6 +39,29 @@
     <%= form.label :relationship_id, style: "display: block" %>
     <%= form.text_field :relationship_id %>
   </div>
+
+  <%= form.fields_for :address do |address_form| %>
+    <details>
+      <summary><strong>Address</strong></summary>
+
+      <div>
+        <%= address_form.label :city, style: "display: block" %>
+        <%= address_form.text_field :city %>
+      </div>
+      
+      <div>
+        <%= address_form.label :street_address, "Street Address", style: "display: block" %>
+        <%= address_form.text_field :street_address %>
+      </div>
+
+      <div>
+        <%= address_form.label :state, style: "display: block" %>
+        <%= address_form.text_field :state %>
+      </div>
+
+  
+    </details>
+  <% end %>
 
   <div>
     <%= form.submit %>
