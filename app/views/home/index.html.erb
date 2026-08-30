@@ -1,11 +1,45 @@
-<h1>heading</h1>
-<p>Hi</p>
-<%= image_tag "horse.jpg", alt: "Horse", class: "horse-image" %>
+<% content_for :title, "Along With You" %>
 
-<% if user_signed_in? %>
-  <p> <%= link_to 'Sign out', destroy_user_session_path, data: { turbo_method: :delete } %> </p>
-<% else %>
-  <p> <%= link_to 'Sign in', new_user_session_path %> </p>
-  <p> <%= link_to 'Sign up', new_user_registration_path %> </p>
+<section class="hero">
+  <p class="hero__eyebrow">Our vision</p>
+  <h1>No one faces a medical journey overwhelmed by information, uncertainty, or alone.</h1>
+
+  <%# The one action on the page, and the only place in the app that offers to
+      make an account - the header carries Sign in and nothing else. Hidden
+      once you have one: a signed-in visitor already has the whole nav. %>
+  <% unless user_signed_in? %>
+    <p class="hero__cta">
+      <%= link_to "Create an account", new_user_registration_path, class: "button" %>
+    </p>
+  <% end %>
+</section>
+
+<section class="prose">
+  <h2>Our mission</h2>
+  <p>
+    Provide healthcare professionals with free tools to help individuals
+    organize important medical information, so individuals receiving a critical
+    health diagnosis can focus on their care and make better informed decisions.
+  </p>
+
+  <h2>Support the work</h2>
+  <p>
+    Along With You is given free of charge to those facing a health challenge.
+    It is our hope that having the information you need right on hand will give
+    you one less thing to worry about, and let you know that many are along with
+    you.
+  </p>
+  <p>
+    If you would like to make a donation to Along With You, visit
+    <%= link_to "alongwithyou.org", "https://www.alongwithyou.org" %>.
+  </p>
+</section>
+
+<%# The horse used to be the whole home page. It is an easter egg now: the URL
+    has to ask for it. params.key? rather than reading the value, so a bare
+    ?stampede - nothing after the name - is enough. %>
+<% if params.key?(:stampede) %>
+  <figure class="stampede">
+    <%= image_tag "horse.jpg", alt: "Five horses at full gallop, kicking up dust" %>
+  </figure>
 <% end %>
-

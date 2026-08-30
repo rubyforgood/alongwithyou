@@ -242,6 +242,60 @@ code, pre { font-family: var(--font-mono); font-size: 0.9375em; }
 .site-footer__inner { padding-block: var(--space-4); }
 .site-footer p { margin: 0; }
 
+/* ----------------------------------------------------------------- home --- */
+/*
+ * The one hand-written page. A visitor who lands on / is not here to use the
+ * app - they are deciding whether to trust it - so the page leads with the
+ * vision in display size and drops to reading size for everything after.
+ */
+
+.hero {
+  padding-block: var(--space-2) var(--space-5);
+  border-bottom: 1px solid hsl(var(--border));
+  margin-bottom: var(--space-5);
+}
+
+/* The label above the vision statement. Small and quiet: it says what the
+   sentence below it is, and the sentence is the thing worth reading. */
+.hero__eyebrow {
+  margin-bottom: var(--space-2);
+  color: hsl(var(--muted-foreground));
+  font-size: 0.8125rem;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+/* Bigger than an h1 anywhere else in the app, and clamped so it stays a
+   headline on a phone instead of becoming five short lines. */
+.hero h1 {
+  margin: 0;
+  font-size: clamp(1.75rem, 1.2rem + 2.4vw, 2.75rem);
+  letter-spacing: -0.02em;
+}
+
+.hero__cta { margin: var(--space-4) 0 0; }
+
+/* Sentences, so they get the narrower measure the body copy elsewhere gets by
+   accident - .site-main is 800px wide, which is wide for a paragraph. */
+.prose { max-width: 62ch; }
+
+.prose h2 { margin-top: var(--space-5); }
+.prose h2:first-child { margin-top: 0; }
+
+/* The easter egg, and the reason this class exists at all: a horse that turns
+   up only with ?stampede should look framed, not like a broken hero image. */
+.stampede {
+  margin: var(--space-6) 0 0;
+}
+
+.stampede img {
+  display: block;
+  width: 100%;
+  border: 1px solid hsl(var(--border));
+  border-radius: var(--radius);
+}
+
 /* ------------------------------------------------------------- controls --- */
 
 label {
@@ -282,8 +336,13 @@ input[type="radio"] + label {
    breathing room without touching _form.html.erb. */
 form > div { margin-bottom: var(--space-3); }
 
+/* .button is for links that act - "Create an account" on the home page. It
+   rides the same rule as the real controls so a link-button and a submit
+   button cannot drift apart; the three declarations after are the ones a link
+   needs and a <button> already has. */
 input[type="submit"],
-button {
+button,
+.button {
   padding: 10px var(--space-4);
   border: 1px solid transparent;
   border-radius: calc(var(--radius) - 4px);
@@ -295,8 +354,15 @@ button {
   cursor: pointer;
 }
 
+.button {
+  display: inline-block;
+  color: hsl(var(--primary-foreground));
+  text-decoration: none;
+}
+
 input[type="submit"]:hover,
-button:hover { background: hsl(var(--primary) / 0.9); }
+button:hover,
+.button:hover { background: hsl(var(--primary) / 0.9); }
 
 /* button_to ... method: :delete posts a form carrying a hidden _method=delete,
    which is the only thing distinguishing "Destroy this person" from any other
