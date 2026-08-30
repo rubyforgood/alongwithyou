@@ -3,9 +3,7 @@ class DoctorQuestion < ApplicationRecord
 
   validates :question, presence: true, length: { maximum: 1000 }
 
-  # Whitelist. Never interpolate a query parameter into an ORDER BY: anything
-  # not in this hash falls back to the default rather than reaching SQL, which
-  # is what makes the Arel.sql below safe to write.
+  # A whitelist, not a lookup table: params never reach the Arel.sql below.
   SORT_COLUMNS = {
     "type" => "doctor_question_types.name",
     "question" => "doctor_questions.question"

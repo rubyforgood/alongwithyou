@@ -6,7 +6,6 @@ class DoctorQuestionsController < ApplicationController
     @doctor_questions = DoctorQuestion.sorted_by(params[:sort], params[:direction])
   end
 
-
   # GET /doctor_questions/1 or /doctor_questions/1.json
   def show
   end
