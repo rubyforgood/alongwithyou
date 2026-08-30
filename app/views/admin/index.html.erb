@@ -1,0 +1,23 @@
+<% content_for :title, "Admin" %>
+
+<h1>Admin</h1>
+
+<p class="lede">
+  The reference data behind prescriptions. These lists are set up once and
+  edited rarely - the people using the app day to day pick from them rather
+  than add to them.
+</p>
+
+<ul class="admin-cards">
+  <% admin_sections.each do |section| %>
+    <li class="admin-card">
+      <%# The heading carries the only link, and it stretches over the whole
+          card - so the card is clickable without a second link to the same
+          place for a screen reader to read out twice. %>
+      <h2 class="admin-card__title">
+        <%= link_to section[:name], section[:path], class: "admin-card__link" %>
+      </h2>
+      <p class="admin-card__description"><%= section[:description] %></p>
+    </li>
+  <% end %>
+</ul>

@@ -1,0 +1,20 @@
+<%# The second nav band, shown by the layout on every page of the
+    administrative area. It is what makes /medications feel like part of a
+    place rather than another top-level section: the header's Admin link stays
+    lit, and this row says which admin section you are in.
+
+    "Overview" is here rather than as a heading link because it is one of the
+    destinations - from a medication form, /admin is somewhere you go back to. %>
+<nav class="admin-nav" aria-label="Admin">
+  <div class="admin-nav__inner">
+    <span class="admin-nav__label">Admin</span>
+
+    <%= link_to "Overview", admin_path,
+          aria: { current: aria_current_section(admin_path) } %>
+
+    <% admin_sections.each do |section| %>
+      <%= link_to section[:name], section[:path],
+            aria: { current: aria_current_section(section[:path]) } %>
+    <% end %>
+  </div>
+</nav>
