@@ -1,4 +1,10 @@
 Rails.application.routes.draw do
+  devise_for :users
+  resources :medications
+  resources :medication_types
+  resources :people do
+    resource :address, only: [ :show, :create, :update, :destroy ]
+  end
   # Define your application routes per the DSL in https://guides.rubyonrails.org/routing.html
 
   # JSON API consumed by the Expo app in mobile/.
@@ -24,5 +30,6 @@ Rails.application.routes.draw do
   # get "service-worker" => "rails/pwa#service_worker", as: :pwa_service_worker
 
   # Defines the root path route ("/")
-  # root "posts#index"
+  root "home#index"
+  get "world" => "home#world"
 end

@@ -1,11 +1,17 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
   <head>
-    <title><%= content_for(:title) || "Alongwithyou" %></title>
+    <title><%= content_for(:title) || "Along With You" %></title>
     <meta name="viewport" content="width=device-width,initial-scale=1">
     <meta name="apple-mobile-web-app-capable" content="yes">
-    <meta name="application-name" content="Alongwithyou">
+    <meta name="application-name" content="Along With You">
     <meta name="mobile-web-app-capable" content="yes">
+
+    <%# Tells the browser to paint its own furniture - scrollbars, date pickers,
+        checkboxes - in whichever scheme the OS is set to, so they match the
+        palette in application.css rather than staying stubbornly light. %>
+    <meta name="color-scheme" content="light dark">
+
     <%= csrf_meta_tags %>
     <%= csp_meta_tag %>
 
@@ -24,6 +30,53 @@
   </head>
 
   <body>
-    <%= yield %>
+    <%# First thing in the tab order, hidden until focused. Without it, a
+        keyboard user tabs the whole nav on every page before reaching content. %>
+    <a class="skip-link" href="#main">Skip to content</a>
+
+    <header class="site-header">
+      <div class="site-header__inner">
+        <%= link_to "Along With You", root_path, class: "site-title" %>
+
+        <nav class="site-nav" aria-label="Main">
+          <%# aria-current marks the active link for screen readers, and
+              application.css hangs the visual active state off the same
+              attribute so the two cannot drift apart. See
+              ApplicationHelper#aria_current_section for why it is not
+              current_page?. %>
+          <%= link_to "People", people_path,
+                aria: { current: aria_current_section(people_path) } %>
+          <%= link_to "Medications", medications_path,
+                aria: { current: aria_current_section(medications_path) } %>
+          <%= link_to "Medication types", medication_types_path,
+                aria: { current: aria_current_section(medication_types_path) } %>
+
+          <%# Devise signs out via DELETE, so this needs Turbo to issue the
+              verb. button_to would work without it, but it would land in the
+              nav as a filled button - and, being a delete, painted in the
+              destructive red application.css reserves for the real thing. %>
+          <span class="site-nav__account">
+            <% if user_signed_in? %>
+              <span class="site-nav__user"><%= current_user.email %></span>
+              <%= link_to "Sign out", destroy_user_session_path,
+                    data: { turbo_method: :delete } %>
+            <% else %>
+              <%= link_to "Sign in", new_user_session_path,
+                    aria: { current: aria_current_section(new_user_session_path) } %>
+            <% end %>
+          </span>
+        </nav>
+      </div>
+    </header>
+
+    <main id="main" class="site-main">
+      <%= yield %>
+    </main>
+
+    <footer class="site-footer">
+      <div class="site-footer__inner">
+        <p>Along With You &middot; a Ruby for Good project</p>
+      </div>
+    </footer>
   </body>
 </html>

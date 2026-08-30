@@ -1,0 +1,9 @@
+<p style="color: green"><%= notice %></p>
+
+<%= render @address %>
+
+<div>
+  <%= link_to "Back to person", @person %>
+
+  <%= button_to "Destroy this address", person_address_path(@person), method: :delete %>
+</div>

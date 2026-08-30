@@ -1,10 +1,402 @@
 /*
- * This is a manifest file that'll be compiled into application.css.
+ * The web app's stylesheet. One file on purpose: Propshaft serves
+ * app/assets/stylesheets without a build step, and a single file means no
+ * questions about which sheet loads first.
  *
- * With Propshaft, assets are served efficiently without preprocessing steps. You can still include
- * application-wide styles in this file, but keep in mind that CSS precedence will follow the standard
- * cascading order, meaning styles declared later in the document or manifest will override earlier ones,
- * depending on specificity.
+ * THE PALETTE IS NOT ORIGINAL TO THIS FILE. It is copied from
+ * mobile/src/global.css, which is the source of truth and carries the
+ * reasoning - including why the light-mode primary is a deeper teal than the
+ * brand teal (white text on the brand teal is 2.8:1, and WCAG AA wants 4.5:1).
+ * Values are `H S% L%` triplets rather than colours, same as over there, so the
+ * two files diff cleanly. Change one, change both.
  *
- * Consider organizing styles into separate files for maintainability.
+ * The mobile app switches schemes with a `.dark` class because it has a
+ * toggle. This side has no toggle, so it follows the operating system via
+ * prefers-color-scheme instead. That is the only intentional difference.
+ *
+ * Everything below styles plain HTML elements. Nothing here needs a class on a
+ * view, which is what lets the Rails scaffolds pick it up without being edited.
  */
+
+:root {
+  /* Light. Mirrors :root in mobile/src/global.css. */
+  --background: 180 30% 99%;        /* #FCFDFD */
+  --foreground: 196 28% 16%;        /* #1D2E34 */
+  --card: 0 0% 100%;                /* #FFFFFF */
+  --card-foreground: 196 28% 16%;   /* #1D2E34 */
+  --primary: 181 66% 29%;           /* #19797B */
+  --primary-foreground: 0 0% 100%;  /* #FFFFFF */
+  --secondary: 180 30% 95%;         /* #EEF6F6 */
+  --secondary-foreground: 194 30% 22%; /* #274149 */
+  --muted: 180 28% 96%;             /* #F2F8F8 */
+  --muted-foreground: 196 14% 40%;  /* #586D74 */
+  --accent: 181 40% 92%;            /* #E2F2F3 */
+  --accent-foreground: 193 45% 22%; /* #1F4651 */
+  --destructive: 352 58% 45%;       /* #B53042 */
+  --destructive-foreground: 0 0% 100%; /* #FFFFFF */
+  --success: 168 45% 38%;           /* #358D7B - chart-3 over in global.css */
+  --border: 185 22% 88%;            /* #DAE6E7 */
+  --input: 185 22% 85%;             /* #D0E0E1 */
+  --ring: 181 66% 29%;              /* #19797B */
+
+  --radius: 0.875rem;
+
+  /* Spacing, mirroring Spacing in mobile/src/constants/theme.ts. */
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 16px;
+  --space-4: 24px;
+  --space-5: 32px;
+  --space-6: 64px;
+
+  /* MaxContentWidth in mobile/src/constants/theme.ts. */
+  --content-width: 800px;
+
+  /* The same stacks as :root in mobile/src/global.css. Spline Sans and Inter
+     are not loaded - no webfont request, no new dependency - so in practice
+     this resolves to the system UI font, which is what the mobile web build
+     falls back to as well. */
+  --font-display: Spline Sans, Inter, ui-sans-serif, system-ui, sans-serif,
+    Apple Color Emoji, Segoe UI Emoji, Segoe UI Symbol, Noto Color Emoji;
+  --font-mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas,
+    Liberation Mono, Courier New, monospace;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    /* Mirrors .dark:root in mobile/src/global.css. */
+    --background: 196 30% 8%;         /* #0E171B */
+    --foreground: 180 18% 94%;        /* #EDF2F2 */
+    --card: 196 26% 11%;              /* #151F23 */
+    --card-foreground: 180 18% 94%;   /* #EDF2F2 */
+    --primary: 181 66% 41%;           /* #24ABAE - the brand teal */
+    --primary-foreground: 192 50% 8%; /* #0A1B1F */
+    --secondary: 196 22% 17%;         /* #223035 */
+    --secondary-foreground: 180 16% 92%; /* #E7EEEE */
+    --muted: 196 22% 16%;             /* #202D32 */
+    --muted-foreground: 188 14% 68%;  /* #A2B6B9 */
+    --accent: 194 26% 22%;            /* #2A4047 */
+    --accent-foreground: 180 16% 92%; /* #E7EEEE */
+    --destructive: 352 55% 48%;       /* #BE3749 */
+    --destructive-foreground: 0 0% 100%; /* #FFFFFF */
+    --success: 168 45% 52%;           /* #4EBCA6 */
+    --border: 196 20% 20%;            /* #29383D */
+    --input: 196 20% 24%;             /* #314349 */
+    --ring: 181 66% 41%;              /* #24ABAE */
+  }
+}
+
+/* ---------------------------------------------------------------- base --- */
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html {
+  -webkit-text-size-adjust: 100%;
+}
+
+body {
+  margin: 0;
+  background: hsl(var(--background));
+  color: hsl(var(--foreground));
+  font-family: var(--font-display);
+  /* 17px. The people using this are often tired, often on a phone in bad
+     light, often older. Default 16px is the floor, not the target. */
+  font-size: 1.0625rem;
+  line-height: 1.6;
+  -webkit-font-smoothing: antialiased;
+}
+
+h1, h2, h3 {
+  line-height: 1.25;
+  text-wrap: balance;
+  margin: 0 0 var(--space-3);
+}
+
+h1 { font-size: 1.875rem; letter-spacing: -0.02em; }
+h2 { font-size: 1.375rem; }
+h3 { font-size: 1.125rem; }
+
+p { margin: 0 0 var(--space-3); }
+
+a {
+  color: hsl(var(--primary));
+  text-decoration-color: hsl(var(--primary) / 0.4);
+  text-underline-offset: 3px;
+}
+
+a:hover { text-decoration-color: hsl(var(--primary)); }
+
+/* One focus ring for everything. Visible in both schemes at 3:1 or better. */
+:where(a, button, input, select, textarea, summary):focus-visible {
+  outline: 2px solid hsl(var(--ring));
+  outline-offset: 2px;
+  border-radius: calc(var(--radius) - 6px);
+}
+
+hr {
+  border: 0;
+  border-top: 1px solid hsl(var(--border));
+  margin: var(--space-4) 0;
+}
+
+img { max-width: 100%; height: auto; }
+
+code, pre { font-family: var(--font-mono); font-size: 0.9375em; }
+
+/* -------------------------------------------------------------- layout --- */
+
+.skip-link {
+  position: absolute;
+  left: var(--space-2);
+  top: -3rem;
+  z-index: 10;
+  padding: var(--space-2) var(--space-3);
+  border-radius: calc(var(--radius) - 4px);
+  background: hsl(var(--primary));
+  color: hsl(var(--primary-foreground));
+  text-decoration: none;
+  transition: top 120ms ease;
+}
+
+.skip-link:focus { top: var(--space-2); }
+
+.site-header {
+  border-bottom: 1px solid hsl(var(--border));
+  background: hsl(var(--card));
+}
+
+.site-header__inner,
+.site-main,
+.site-footer__inner {
+  max-width: var(--content-width);
+  margin-inline: auto;
+  padding-inline: var(--space-3);
+}
+
+.site-header__inner {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: var(--space-2) var(--space-4);
+  padding-block: var(--space-3);
+}
+
+.site-title {
+  font-size: 1.0625rem;
+  font-weight: 650;
+  letter-spacing: -0.01em;
+  color: hsl(var(--foreground));
+  text-decoration: none;
+}
+
+.site-nav {
+  /* Filling the row is what lets the account group's auto margin push it to
+     the far edge, away from the section links. */
+  flex: 1;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: var(--space-1) var(--space-3);
+  font-size: 0.9375rem;
+}
+
+.site-nav__account {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: var(--space-1) var(--space-3);
+  margin-inline-start: auto;
+}
+
+/* Whose account this is - context, not a place you can go. */
+.site-nav__user {
+  color: hsl(var(--muted-foreground));
+  overflow-wrap: anywhere;
+}
+
+.site-nav a {
+  color: hsl(var(--muted-foreground));
+  text-decoration: none;
+  padding-block: var(--space-1);
+}
+
+.site-nav a:hover { color: hsl(var(--foreground)); }
+
+.site-nav a[aria-current="page"] {
+  color: hsl(var(--primary));
+  font-weight: 600;
+}
+
+.site-main { padding-block: var(--space-5) var(--space-6); }
+
+.site-footer {
+  border-top: 1px solid hsl(var(--border));
+  color: hsl(var(--muted-foreground));
+  font-size: 0.875rem;
+}
+
+.site-footer__inner { padding-block: var(--space-4); }
+.site-footer p { margin: 0; }
+
+/* ------------------------------------------------------------- controls --- */
+
+label {
+  display: block;
+  margin-bottom: var(--space-1);
+  font-size: 0.9375rem;
+  font-weight: 550;
+}
+
+input:not([type="submit"]):not([type="checkbox"]):not([type="radio"]),
+select,
+textarea {
+  width: 100%;
+  max-width: 26rem;
+  padding: 10px var(--space-2);
+  border: 1px solid hsl(var(--input));
+  border-radius: calc(var(--radius) - 4px);
+  background: hsl(var(--card));
+  color: hsl(var(--foreground));
+  font: inherit;
+  font-size: 1rem; /* Below 16px, iOS Safari zooms on focus. */
+}
+
+input::placeholder,
+textarea::placeholder { color: hsl(var(--muted-foreground)); }
+
+/* A hand-written <%= f.check_box %><%= f.label %> pair puts the two next to
+   each other, where the block label above would drop the caption onto its own
+   line under a bare box. Beside a checkbox or radio, a label stays inline. */
+input[type="checkbox"] + label,
+input[type="radio"] + label {
+  display: inline;
+  margin-bottom: 0;
+  font-weight: 400;
+}
+
+/* The scaffold forms wrap each field in a bare <div>. This is what gives them
+   breathing room without touching _form.html.erb. */
+form > div { margin-bottom: var(--space-3); }
+
+input[type="submit"],
+button {
+  padding: 10px var(--space-4);
+  border: 1px solid transparent;
+  border-radius: calc(var(--radius) - 4px);
+  background: hsl(var(--primary));
+  color: hsl(var(--primary-foreground));
+  font: inherit;
+  font-size: 1rem;
+  font-weight: 550;
+  cursor: pointer;
+}
+
+input[type="submit"]:hover,
+button:hover { background: hsl(var(--primary) / 0.9); }
+
+/* button_to ... method: :delete posts a form carrying a hidden _method=delete,
+   which is the only thing distinguishing "Destroy this person" from any other
+   button. Without this it renders in the brand teal, making delete the loudest
+   control on the show page. :has is safe here - ApplicationController already
+   gates on allow_browser versions: :modern. */
+form:has(input[name="_method"][value="delete"]) button {
+  background: hsl(var(--destructive));
+  color: hsl(var(--destructive-foreground));
+}
+
+form:has(input[name="_method"][value="delete"]) button:hover {
+  background: hsl(var(--destructive) / 0.9);
+}
+
+/* ------------------------------------------------- scaffold accommodation --- */
+/*
+ * Everything below exists so the generator's output looks deliberate without
+ * anyone editing app/views. If a view is ever rewritten by hand, the matching
+ * rule here can go with it.
+ */
+
+/* The partials render <div id="person_1"> via dom_id. Carding them turns the
+   generator's field dumps into something readable, on both index and show.
+   The div is load-bearing: form_with names its fields person_first_name,
+   medication_name and so on, so an unanchored [id^="person_"] would card every
+   input on every form as well. */
+div[id^="person_"],
+div[id^="medication_"] {
+  padding: var(--space-3) var(--space-4);
+  margin-bottom: var(--space-3);
+  border: 1px solid hsl(var(--border));
+  border-radius: var(--radius);
+  background: hsl(var(--card));
+}
+
+/* Inside those cards the pattern is <strong>Field name:</strong> value.
+   Demoting the label and leading the value reads as a definition list. */
+div[id^="person_"] strong,
+div[id^="medication_"] strong {
+  display: block;
+  color: hsl(var(--muted-foreground));
+  font-size: 0.8125rem;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+}
+
+div[id^="person_"] > div,
+div[id^="medication_"] > div { margin-bottom: var(--space-2); }
+
+div[id^="person_"] > div:last-child,
+div[id^="medication_"] > div:last-child { margin-bottom: 0; }
+
+/* The scaffolds emit `<p style="color: green">` for the flash and
+   `<div style="color: red">` for the error summary. The inline colour wins on
+   specificity, so these rules have to override it. Ugly, and deliberately so:
+   it is cheaper than editing nine views, and it disappears the moment those
+   views get written properly. */
+p[style*="green"] {
+  padding: var(--space-2) var(--space-3);
+  border-radius: calc(var(--radius) - 4px);
+  border: 1px solid hsl(var(--success) / 0.35);
+  background: hsl(var(--success) / 0.12);
+  color: hsl(var(--foreground)) !important;
+}
+
+/* With no flash to show, that <p> still renders - empty. Hide it. */
+p[style*="green"]:empty { display: none; }
+
+div[style*="red"] {
+  padding: var(--space-3) var(--space-4);
+  margin-bottom: var(--space-4);
+  border-radius: var(--radius);
+  border: 1px solid hsl(var(--destructive) / 0.35);
+  background: hsl(var(--destructive) / 0.1);
+  color: hsl(var(--foreground)) !important;
+}
+
+div[style*="red"] h2 {
+  font-size: 1rem;
+  color: hsl(var(--destructive));
+}
+
+div[style*="red"] ul { margin: 0; padding-left: 1.25rem; }
+
+/* Devise ships its own views, and sessions/new wraps the "remember me"
+   checkbox and its label in two consecutive <p> elements - so the caption
+   lands a line below a box with nothing beside it, whatever the label rule
+   above says. Rowing that one field puts them back together. Same bargain as
+   the scaffolds: cheaper than running the generator and owning the views. */
+.field:has(> p > input[type="checkbox"]) {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.field:has(> p > input[type="checkbox"]) p { margin: 0; }
+
+.field:has(> p > input[type="checkbox"]) label {
+  margin: 0;
+  font-weight: 400;
+}
