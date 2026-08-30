@@ -37,9 +37,7 @@
             <td><%= or_dash prescription.prescribing_doctor %></td>
             <td>
               <%= prescription_started prescription %>
-              <% if (since = prescription_stopped(prescription)) %>
-                <span class="table-note"><%= since %></span>
-              <% end %>
+              <span class="table-note"><%= prescription_stopped prescription %></span>
             </td>
             <td><%= prescription_status prescription %></td>
           </tr>

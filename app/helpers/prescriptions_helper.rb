@@ -6,13 +6,17 @@ module PrescriptionsHelper
     prescription_date(prescription.start_date) || "—"
   end
 
-  # What has happened since it started, or nil when there is nothing to say.
+  # What has happened since it started. Every combination of active and
+  # stop_date says something, and all four say it out loud: a blank line under
+  # a Stopped badge is indistinguishable from a column that failed to render.
   def prescription_stopped(prescription)
     stopped = prescription_date(prescription.stop_date)
 
-    return "stopped #{stopped}" if stopped
-
-    "ongoing" if prescription.active?
+    if prescription.active?
+      stopped ? "until #{stopped}" : "ongoing"
+    else
+      stopped ? "stopped #{stopped}" : "no stop date recorded"
+    end
   end
 
   # The word carries the meaning; the colour only agrees with it. A boolean

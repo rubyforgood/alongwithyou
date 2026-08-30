@@ -8,7 +8,7 @@ class CreatePrescriptions < ActiveRecord::Migration[8.1]
       t.string :time_of_day
       t.string :prescribing_doctor
       t.text :purpose
-      t.boolean :active
+      t.boolean :active, default: true, null: false
       t.date :start_date
       t.date :stop_date
       t.text :notes
