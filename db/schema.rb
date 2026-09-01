@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_08_29_203900) do
+ActiveRecord::Schema[8.1].define(version: 2026_08_29_210653) do
   create_table "addresses", force: :cascade do |t|
     t.string "city"
     t.datetime "created_at", null: false
@@ -24,6 +24,21 @@ ActiveRecord::Schema[8.1].define(version: 2026_08_29_203900) do
     t.datetime "created_at", null: false
     t.string "name"
     t.datetime "updated_at", null: false
+  end
+
+  create_table "doctor_question_types", force: :cascade do |t|
+    t.datetime "created_at", null: false
+    t.string "name", null: false
+    t.datetime "updated_at", null: false
+    t.index ["name"], name: "index_doctor_question_types_on_name", unique: true
+  end
+
+  create_table "doctor_questions", force: :cascade do |t|
+    t.datetime "created_at", null: false
+    t.integer "doctor_question_type_id", null: false
+    t.text "question", null: false
+    t.datetime "updated_at", null: false
+    t.index ["doctor_question_type_id"], name: "index_doctor_questions_on_doctor_question_type_id"
   end
 
   create_table "medication_forms", force: :cascade do |t|
@@ -117,6 +132,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_08_29_203900) do
   end
 
   add_foreign_key "addresses", "people"
+  add_foreign_key "doctor_questions", "doctor_question_types"
   add_foreign_key "medications", "medication_types"
   add_foreign_key "people", "relationships"
   add_foreign_key "prescriptions", "medication_forms"

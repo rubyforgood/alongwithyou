@@ -63,7 +63,8 @@
               equal billing with People and Prescriptions. %>
           <%= link_to "Admin", admin_path,
                 aria: { current: ("page" if admin_area?) } %>
-
+          <%= link_to "Questions", doctor_question_types_path,
+                aria: { current: aria_current_section(doctor_question_types_path) } %>
           <%# Devise signs out via DELETE, so this needs Turbo to issue the
               verb. button_to would work without it, but it would land in the
               nav as a filled button - and, being a delete, painted in the

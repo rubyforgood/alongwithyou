@@ -1,0 +1,24 @@
+# Read about fixtures at https://api.rubyonrails.org/classes/ActiveRecord/FixtureSet.html
+
+# Three questions under three types. Three rather than two on purpose: with two
+# rows a sort assertion passes even if the sort merely reverses, and the middle
+# element is what catches an ordering that is subtly wrong.
+#
+# The question text deliberately sorts into a different order than the type
+# names do (Does/Should/What against Health Concern/Insurance/Surgery), so a
+# test sorting by one column cannot pass while reading the other.
+#
+# doctor_question_type names a label in doctor_question_types.yml, which Rails
+# resolves to that row's id.
+
+diagnosis:
+  question: Should I take this with food?
+  doctor_question_type: health_concern
+
+recovery:
+  question: What did the scan show?
+  doctor_question_type: surgery
+
+coverage:
+  question: Does my plan cover this?
+  doctor_question_type: insurance

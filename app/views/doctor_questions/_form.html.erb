@@ -1,0 +1,32 @@
+<%= form_with(model: doctor_question) do |form| %>
+  <% if doctor_question.errors.any? %>
+    <div style="color: red">
+      <h2><%= pluralize(doctor_question.errors.count, "error") %> prohibited this doctor_question from being saved:</h2>
+
+      <ul>
+        <% doctor_question.errors.each do |error| %>
+          <li><%= error.full_message %></li>
+        <% end %>
+      </ul>
+    </div>
+  <% end %>
+
+  <div>
+    <%= form.label :question, style: "display: block" %>
+    <%= form.textarea :question %>
+  </div>
+
+  <div>
+    <%= form.label :doctor_question_type_id, "Type", style: "display: block" %>
+    <%= form.collection_select :doctor_question_type_id,
+      DoctorQuestionType.order(:name), 
+      :id, 
+      :name,
+      { prompt: "Choose a type" } %>
+  </div>
+
+
+  <div>
+    <%= form.submit %>
+  </div>
+<% end %>
