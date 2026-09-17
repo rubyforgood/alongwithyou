@@ -25,4 +25,28 @@ class AddressesControllerTest < ActionDispatch::IntegrationTest
     end
     assert_redirected_to person_url(@person)
   end
+
+  test "show is a 404 for a person without an address" do
+    @person.address.destroy
+
+    get person_address_url(@person)
+    assert_response :not_found
+  end
+
+  test "update is a 404 for a person without an address" do
+    @person.address.destroy
+
+    patch person_address_url(@person), params: { address: { city: "Springfield" } }
+    assert_response :not_found
+    assert_equal 0, Address.where(person_id: @person.id).count
+  end
+
+  test "destroy is a 404 for a person without an address" do
+    @person.address.destroy
+
+    assert_no_difference("Address.count") do
+      delete person_address_url(@person)
+    end
+    assert_response :not_found
+  end
 end

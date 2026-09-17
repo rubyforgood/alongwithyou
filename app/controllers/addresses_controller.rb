@@ -46,8 +46,11 @@ class AddressesController < ApplicationController
     @person = Person.find(params[:person_id])
   end
 
+  # A person has at most one address, and may have none yet: show, update and
+  # destroy on a person without one are a 404, not a nil blowing up in the
+  # action.
   def set_address
-    @address = @person.address
+    @address = @person.address || raise(ActiveRecord::RecordNotFound.new("Person #{@person.id} has no address", "Address"))
   end
 
   def address_params
