@@ -17,13 +17,19 @@ Rails.application.routes.draw do
     namespace :v1 do
       # No new/edit: those serve HTML forms, which this API never renders. They
       # would also shadow the JSON 404 below with a missing action error.
-      resources :tasks, except: %i[ new edit ]
+      #
+      # The format constraint keeps /tasks and /tasks.json, and sends any other
+      # extension (/tasks.xml, /tasks/1.xml) to the JSON 404 below instead of
+      # quietly answering it with JSON as if the extension had been honoured.
+      resources :tasks, except: %i[ new edit ], constraints: { format: :json }
     end
 
     # Everything under /api answers in JSON, including a wrong path. Without
     # this, an unknown route falls through to the HTML 404 page and the phone
-    # gets markup where it expected a body it can parse.
-    match "*unmatched", to: "base#unmatched_route", via: :all, format: false
+    # gets markup where it expected a body it can parse. The glob is optional
+    # because a wildcard needs at least one character: without the parentheses
+    # the namespace root itself (/api, /api/) would still fall through to HTML.
+    match "(*unmatched)", to: "errors#unmatched_route", via: :all, format: false
   end
 
   # Reveal health status on /up that returns 200 if the app boots with no exceptions, otherwise 500.

@@ -14,15 +14,6 @@ module Api
     # cannot read.
     rescue_from ActionDispatch::Http::Parameters::ParseError, with: :malformed_json
 
-    # Anything under /api that does not match a route: a typo, or a client built
-    # against a newer version of this API. Still answered in JSON.
-    def unmatched_route
-      render json: {
-        error: "not_found",
-        message: "No route matches #{request.request_method} #{request.path}"
-      }, status: :not_found
-    end
-
     private
       def not_found(error)
         render json: { error: "not_found", message: error.message }, status: :not_found
